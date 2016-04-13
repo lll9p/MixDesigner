@@ -33,9 +33,9 @@ class SimplexCentroid():
         nums = range(1, self.p + 1)
         self.base_arr = tuple(chain.from_iterable(map(lambda num:combinations(nums,num),nums)))
         #self.base_arr = tuple(combines for num in nums for combines in combinations(nums, num))
-        self.ftree = self.make_ftree()
+        self._ftree = self._make_ftree()
 
-    def make_ftree(self):
+    def _make_ftree(self):
         '''
         '''
         tree = dict()
@@ -51,7 +51,7 @@ class SimplexCentroid():
     def fit(self, yname, y):
         '''
         generate the formula with specific y, y be experimental results
-            @useage:
+        @useage:
             y = {'1':v1,'2':v2,'3':v3,...,'123':v123}
             y = {'1': 5, '12': 10, '123': 13, '13': 2, '2': 11, '23': 10, '3': 8}
             make_yf(yname='test1',y)
@@ -60,8 +60,8 @@ class SimplexCentroid():
         if len(self.base_arr) != len(y):
             raise TypeError(
                 'Missing required positional argument: not enugh y')
-        self.yf[yname] = tuple(sum(self.ftree[k][yk] * y[yk]
-                            for yk in self.ftree[k]) for k in self.base_arr)
+        self.yf[yname] = tuple(sum(self._ftree[k][yk] * y[yk]
+                            for yk in self._ftree[k]) for k in self.base_arr)
         return self.yf[yname]
 
     def predict(self, yname, x):
@@ -111,7 +111,7 @@ class SimplexCentroidLowerConstraints(SimplexCentroid):
         @useage:
             value_real(x1=0,x2=0,x3=0)
         '''
-        if len(args) != len(self.x):
+        if len(args) != self.p:
             raise TypeError(
                 'Missing required positional argument: not enough x')
         if not np.isclose(sum(np.abs(tuple(args.values()))), 1.0):

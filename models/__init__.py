@@ -1,3 +1,5 @@
-__all__ = ['SimplexCentroid',
+__all__ = ['SimplexAxial',
+           'SimplexCentroid',
            'SimplexLattice',
            'ExtremeVertices']
+
