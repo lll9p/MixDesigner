@@ -5,8 +5,9 @@
 '''
 import numpy as np
 import operator
-from itertools import combinations,chain
+from itertools import combinations, chain
 from functools import reduce
+
 
 class SimplexCentroid():
     '''
@@ -31,7 +32,8 @@ class SimplexCentroid():
         self.yf = dict()
         self.vf = dict()
         nums = range(1, self.p + 1)
-        self.base_arr = tuple(chain.from_iterable(map(lambda num:combinations(nums,num),nums)))
+        self.base_arr = tuple(chain.from_iterable(
+            map(lambda num: combinations(nums, num), nums)))
         #self.base_arr = tuple(combines for num in nums for combines in combinations(nums, num))
         self._ftree = self._make_ftree()
 
@@ -61,7 +63,7 @@ class SimplexCentroid():
             raise TypeError(
                 'Missing required positional argument: not enugh y')
         self.yf[yname] = tuple(sum(self._ftree[k][yk] * y[yk]
-                            for yk in self._ftree[k]) for k in self.base_arr)
+                                   for yk in self._ftree[k]) for k in self.base_arr)
         return self.yf[yname]
 
     def predict(self, yname, x):
@@ -74,14 +76,14 @@ class SimplexCentroid():
         if len(x) != self.p:
             raise TypeError(
                 'Missing required positional argument: not enough x')
-        if not np.isclose(sum(np.abs(x)), 1.0,rtol=1e-2):
+        if not np.isclose(sum(np.abs(x)), 1.0, rtol=1e-2):
             raise ValueError(
                 'Sumutation of x should be 1, and x should be positive')
         su = 0
-        for t,v in zip(self.yf[yname],self.base_arr):
+        for t, v in zip(self.yf[yname], self.base_arr):
             for j in v:
-                t*=x[j-1]
-            su+=t
+                t *= x[j - 1]
+            su += t
         return su
         '''#a little bit slower method
         return sum((
@@ -132,10 +134,4 @@ class SimplexCentroidLowerConstraints(SimplexCentroid):
             m.append([a] * p)
             m[-1][i] += s
         return np.matrix(m)
-
-if __name__ == "__main__":
-    spices_design2 = simplex_center_designer_bounded(p=3, bounds=[.2, .4, .2])
-    y2 = {'1': 5, '2': 11, '3': 8, '12': 10, '13': 2, '23': 10, '123': 13}
-    spices_design2.fit('test1', y2)
-    fig = spices_design.plot2D('test1',nlevels=200, subdiv=8, cmap=plt.cm.inferno)
 
