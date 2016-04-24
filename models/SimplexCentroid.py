@@ -4,25 +4,23 @@
 2 to 10 components
 '''
 import numpy as np
-import operator
 from itertools import combinations, chain
-from functools import reduce
 
 
 class SimplexCentroid():
     '''
     @usage:
-        my_design = simplex_center_designer(p=3)
-        
-        
+        my_design = SimplexCentroid(p=3)
+
+
         my_design.formula(yname='3d',y1=63.1,y2=29.0,y3=22.2,y12=50.6,y13=44.5,y23=26.5,y123=40.3})
         Or,
         y = {'y1':63.1,'y2':29.0,'y3':22.2,'y12':50.6,'y13':44.5,'y23':26.5,'y123':40.3}
         my_design.formula(yname='3d',**y)
         Or,
         my_design.formula('3d',**y)
-        
-        
+
+
         x = {'x1':0.4,'x2':0.5,'x3':0.1}
         my_design.value(yname='3d',**x)
     '''
@@ -34,7 +32,7 @@ class SimplexCentroid():
         nums = range(1, self.p + 1)
         self.base_arr = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num), nums)))
-        #self.base_arr = tuple(combines for num in nums for combines in combinations(nums, num))
+        # self.base_arr = tuple(combines for num in nums for combines in combinations(nums, num))
         self._ftree = self._make_ftree()
 
     def _make_ftree(self):
@@ -85,19 +83,6 @@ class SimplexCentroid():
                 t *= x[j - 1]
             su += t
         return su
-        '''#a little bit slower method
-        return sum((
-            a * b for a, b in zip(
-                (reduce(operator.mul, (x[i - 1] for i in xx))
-                 for xx in self.base_arr),
-                (self.yf[yname])
-            )))
-        '''
-    '''
-    def plot2D(self, yname, **args):
-        f = partial(self.value, yname)
-        return ternary.plot_tri_contourf(f, **args) #
-    '''
 
 
 class SimplexCentroidLowerConstraints(SimplexCentroid):
@@ -134,4 +119,3 @@ class SimplexCentroidLowerConstraints(SimplexCentroid):
             m.append([a] * p)
             m[-1][i] += s
         return np.matrix(m)
-
