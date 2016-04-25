@@ -24,6 +24,24 @@ class SimplexLattice():
         my_design.value(yname='3d',**x)
     '''
 
-    def __init__(self, p=3):
+    def __init__(self, m=2, p=3):
+        self.p = p
+        self.yf = dict()
+        self.vf = dict()
+        nums = range(1, self.p + 1)
+        self.base_arr = tuple(chain.from_iterable(
+            map(lambda num: combinations(nums, num), nums)))
+        self._ftree = self._make_ftree()
 
-        pass
+    def _make_ftree(self):
+        '''
+        '''
+        tree = dict()
+        for k in self.base_arr:
+            r = len(k)
+            tree[k] = {}
+            for j in range(1, r + 1):
+                for coefk in combinations(k, j):
+                    t = len(coefk)
+                    tree[k].update({coefk: r * (-1)**(r - t) * t**(r - 1)})
+        return tree
