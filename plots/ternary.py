@@ -3,11 +3,11 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.tri as tri
 import seaborn as sn
 sn.set(font='WenQUanYi Micro Hei')
 matplotlib.use('TkAgg')
 # my ternary implemental
-import matplotlib.tri as tri
 corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])  # cos(30)
 triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
 # Mid-points of triangle sides opposite of each corner
@@ -51,8 +51,8 @@ def tick_labels(scale=100, size=20):
 
 
 def tri_contourf(f, nlevels=200, subdiv=8, **kwargs):
-    #scale, zoom, Xnames=('x1', 'x2', 'x3'), size=(10, 8),
-    #fontsize=20, **args
+    # scale, zoom, Xnames=('x1', 'x2', 'x3'), size=(10, 8),
+    # fontsize=20, **args
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
     pvals = [f(xy2bc(xy))
@@ -91,9 +91,8 @@ def tri_contourf(f, nlevels=200, subdiv=8, **kwargs):
     ax.set_aspect('equal')
     fig.tight_layout(pad=0)
     ax.axis('equal')
-    #ax.set_xlim(0, 1)
-    #ax.set_ylim(-0.02, 0.75**0.5+0.02)
+    # ax.set_xlim(0, 1)
+    # ax.set_ylim(-0.02, 0.75**0.5+0.02)
     ax.axis('off')
     fig.show()
     return fig
-
