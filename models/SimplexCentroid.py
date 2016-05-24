@@ -5,6 +5,7 @@
 '''
 import numpy as np
 from itertools import combinations, chain
+from ..utils import response_formatter 
 
 
 class SimplexCentroid():
