@@ -5,7 +5,7 @@
 '''
 import numpy as np
 from itertools import combinations, chain
-from ..utils import response_formatter 
+from ..utils import input_y_helper
 
 
 class SimplexCentroid():
