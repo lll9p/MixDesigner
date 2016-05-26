@@ -5,15 +5,12 @@
 '''
 import numpy as np
 from itertools import combinations, chain
-from ..utils import input_y_helper
 
 
 class SimplexCentroid():
     '''
     @usage:
         my_design = SimplexCentroid(p=3)
-
-
         my_design.formula(yname='3d',y1=63.1,y2=29.0,y3=22.2,y12=50.6,y13=44.5,y23=26.5,y123=40.3})
         Or,
         y = {'y1':63.1,'y2':29.0,'y3':22.2,'y12':50.6,'y13':44.5,'y23':26.5,'y123':40.3}
