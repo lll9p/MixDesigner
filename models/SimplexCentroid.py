@@ -109,6 +109,7 @@ class SimplexCentroidLowerConstraints(SimplexCentroid):
         '''
         @useage:
             transform_matrix(x1_bound,x2_bound...)
+        m.dot(Z.T)
         '''
         m = []
         p = len(args)
