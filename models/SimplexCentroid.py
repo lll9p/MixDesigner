@@ -17,8 +17,6 @@ class SimplexCentroid():
         my_design.formula(yname='3d',**y)
         Or,
         my_design.formula('3d',**y)
-
-
         x = {'x1':0.4,'x2':0.5,'x3':0.1}
         my_design.value(yname='3d',**x)
     '''
