@@ -24,7 +24,7 @@ def coded_helper(model):
     return r
 
 
-def coded_exp_helper(model):
+def mixture_proportion_helper(model):
     m = coded_helper(model)
     try:
         Z = model.Z
