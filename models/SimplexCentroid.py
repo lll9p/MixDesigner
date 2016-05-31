@@ -19,6 +19,7 @@ class SimplexCentroid():
         my_design.formula('3d',**y)
         x = {'x1':0.4,'x2':0.5,'x3':0.1}
         my_design.value(yname='3d',**x)
+        TODO: should be use helper to help input data
     '''
 
     def __init__(self, p):
