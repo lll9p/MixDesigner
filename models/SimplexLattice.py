@@ -35,6 +35,7 @@ class SimplexLattice():
 
     def _make_ftree(self):
         '''
+        列出多项式，用混料成分代替之
         tree = dict()
         for k in self.base_arr:
             r = len(k)
