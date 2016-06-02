@@ -9,6 +9,7 @@ from itertools import combinations, chain
 
 class SimplexCentroid():
     '''
+    TODO: should be use helper to help input data, fix the order of y
     @usage:
         my_design = SimplexCentroid(p=3)
         my_design.formula(yname='3d',y1=63.1,y2=29.0,y3=22.2,y12=50.6,y13=44.5,y23=26.5,y123=40.3})
@@ -19,7 +20,6 @@ class SimplexCentroid():
         my_design.formula('3d',**y)
         x = {'x1':0.4,'x2':0.5,'x3':0.1}
         my_design.value(yname='3d',**x)
-        TODO: should be use helper to help input data
     '''
 
     def __init__(self, p):
