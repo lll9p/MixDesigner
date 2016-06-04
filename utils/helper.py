@@ -25,6 +25,9 @@ def coded_helper(model):
 
 
 def mixture_proportion_helper(model):
+    '''
+    help design the proportion
+    '''
     m = coded_helper(model)
     try:
         Z = model.Z
