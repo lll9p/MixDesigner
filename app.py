@@ -7,6 +7,33 @@ import os
 import json
 import time
 from aiohttp import web
+import functools
+
+
+def get(path):
+    '''
+    Method GET decorator
+    '''
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+        wrapper.__method__ = 'GET'
+        wrapper.__route__ = path
+    return decorator
+
+
+def post(path):
+    '''
+    Method POST decorator
+    '''
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+        wrapper.__method__ = 'POST'
+        wrapper.__route__ = path
+    return decorator
 
 
 def index(request):
