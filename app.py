@@ -35,7 +35,10 @@ def post(path):
         wrapper.__route__ = path
     return decorator
 
-
+class RequestHandler():
+def __init__(self,app,func):
+    self._app=app
+    self._func=func
 def index(request):
     return web.Response(body=b'Hello World!')
 async def init(loop):
