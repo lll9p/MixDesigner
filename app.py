@@ -36,9 +36,13 @@ def post(path):
     return decorator
 
 class RequestHandler():
-def __init__(self,app,func):
-    self._app=app
-    self._func=func
+    def __init__(self,app,func):
+        self._app=app
+        self._func=func
+    async def __call__(self,request):
+        kw = request.get?
+        r = await self._func(**kw)
+        return r
 def index(request):
     return web.Response(body=b'Hello World!')
 async def init(loop):
