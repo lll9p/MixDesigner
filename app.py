@@ -43,6 +43,9 @@ class RequestHandler():
         kw = request.get?
         r = await self._func(**kw)
         return r
+
+def add_route(app,fn):
+    pass
 def index(request):
     return web.Response(body=b'Hello World!')
 async def init(loop):
