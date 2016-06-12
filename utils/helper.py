@@ -7,7 +7,7 @@ def input_y_helper(base_arr):
     ydict = {}
     for arr in base_arr:
         y = 'y' + ''.join([str(n) for n in arr])
-        ydict[y] = int(input('Input {}:'.format(y)))
+        ydict[y] = float(input('Input {}:'.format(y)))
     return ydict
 
 
