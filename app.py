@@ -8,7 +8,15 @@ import tornado.web
 logging.basicConfig(level=logging.INFO)
 
 
-class MainHandler(tornado.web.RequestHandler):
+class BaseHandler(tornado.web.RequestHandler):
+    '''
+    '''
+    # def write_error(self):
+    # def get_current_user
+    pass
+
+
+class MainHandler(BaseHandler):
 
     def get(self):
         self.write("Hello, world")
