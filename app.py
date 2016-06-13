@@ -19,7 +19,7 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
 
     def get(self):
-        self.write("Hello, world")
+        self.render(r'template/base.html', items=[1, 2, 3])
 
 
 def make_app():
