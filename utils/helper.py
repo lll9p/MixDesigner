@@ -3,23 +3,24 @@
 import numpy as np
 
 
-def input_y_helper(base_arr):
-    ydict = {}
-    for arr in base_arr:
-        y = 'y' + ''.join([str(n) for n in arr])
-        ydict[y] = float(input('Input {}:'.format(y)))
-    return ydict
+def input_y_helper(base_arr, flag=False):
+    ys = [''.join([str(n) for n in arr]) for arr in base_arr]
+    if flag:
+        y = [float(i) for i in input('Input the y array pls.\n').split('\n')]
+    else:
+        y=[float(input('Input y_{}:'.format(yi))) for yi in ys]
+    return dict(zip(ys, y))
 
 
 def coded_helper(model):
-    p = model.p
-    base_arr = model.base_arr
-    r = []
+    p=model.p
+    base_arr=model.base_arr
+    r=[]
     for l in base_arr:
-        t = [0] * p
-        avg = 1 / len(l)
+        t=[0] * p
+        avg=1 / len(l)
         for i in l:
-            t[i - 1] = avg
+            t[i - 1]=avg
         r.append(t)
     return r
 
@@ -28,9 +29,9 @@ def mixture_proportion_helper(model):
     '''
     help design the proportion
     '''
-    m = coded_helper(model)
+    m=coded_helper(model)
     try:
-        Z = model.Z
+        Z=model.Z
     except:
-        Z = None
+        Z=None
     return np.matrix(m) * Z.T

@@ -1,0 +1,12 @@
+<html>
+    <head>
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        <ul>
+            {% for text,link in designers.items() %}
+            <li><a href="{{ link }}">{{ text }}</a></li>
+            {% end %}
+        </ul>
+    </body>
+</html>
