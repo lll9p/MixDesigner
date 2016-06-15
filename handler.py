@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
+import json
 import tornado.web
+import models
+import utils
+_model_list = list(models.__models__.keys())
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -9,6 +14,43 @@ class BaseHandler(tornado.web.RequestHandler):
     # def write_error(self):
     # def get_current_user
     pass
+
+
+class BaseAPIHandler(tornado.web.RequestHandler):
+    '''
+    '''
+    # def write_error(self):
+    # def get_current_user
+    pass
+
+
+class APIHandler(BaseAPIHandler):
+
+    def prepare(self):
+        if self.request.headers.get('Content-Type', '').startswith('application/json'):
+            self.json_args = json.loads(self.request.body)
+        else:
+            self.json_args = None
+
+    def get(self, *kw, **args):
+        model_name, experiment_id = args.get(
+            'model_name'), args.get('experiment_id')
+        logging.info('model_name is {}.'.format(model_name))
+        if model_name not in _model_list:
+            model_name = 'missing'
+            logging.info('model_name not FOUND.')
+        try:
+            experiment_id = int(experiment_id)
+        except:
+            experiment_id = -1
+            logging.info('experiment_id name not FOUND.')
+        point = int(self.get_argument('point'))
+        model = models.__models__[model_name](point)
+        coded = utils.helper.coded_helper(model)
+        self.write(json.dumps({'code': coded}))
+
+    def post(self, *kw, **args):
+        pass
 
 
 class MainHandler(BaseHandler):

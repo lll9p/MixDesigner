@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+'''
+2 to 10 components
+'''
 
-class SimplexAxial():
+
+def ExtremeVertices():
     def __init__(self):
         pass

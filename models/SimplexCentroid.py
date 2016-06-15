@@ -22,20 +22,22 @@ class SimplexCentroid():
         my_design.predict(X)
     '''
 
-    def __init__(self, p):
-        self.p = p
+    def __init__(self, point, lower_bounds=None, upper_bounds=None, interest_area=None):
+        self.point = point
+        self.transform_maxtix = self._transform_matrix(*lower_bounds)
         self.yf = dict()
         self.vf = dict()
-        nums = range(1, self.p + 1)
+        nums = range(1, self.point + 1)
         self.base_arr = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num), nums)))
-        self._ftree = self._make_ftree()
+        self._ftree = self._make_ftree(self.base_arr)
 
-    def _make_ftree(self):
+    @staticmethod
+    def _make_ftree(base_arr):
         '''
         '''
         tree = dict()
-        for k in self.base_arr:
+        for k in base_arr:
             r = len(k)
             tree[k] = {}
             for j in range(1, r + 1):
@@ -43,6 +45,21 @@ class SimplexCentroid():
                     t = len(coefk)
                     tree[k].update({coefk: r * (-1)**(r - t) * t**(r - 1)})
         return tree
+
+    @staticmethod
+    def _transform_matrix(*args):
+        '''
+        @useage:
+            transform_matrix(x1_bound,x2_bound...)
+        m.dot(Z.T)
+        '''
+        m = []
+        p = len(args)
+        s = 1 - sum(args)
+        for i, a in enumerate(args):
+            m.append([a] * p)
+            m[-1][i] += s
+        return np.matrix(m)
 
     def fit(self, y):
         '''
@@ -70,7 +87,7 @@ class SimplexCentroid():
         '''
         r = []
         for x in X:
-            if len(x)!= self.p:
+            if len(x) != self.point:
                 raise TypeError(
                     'Missing required positional argument: not enough x')
             su = 0
@@ -95,7 +112,7 @@ class SimplexCentroidLowerConstraints(SimplexCentroid):
         @useage:
             value_real(x1=0,x2=0,x3=0)
         '''
-        if len(args) != self.p:
+        if len(args) != self.point:
             raise TypeError(
                 'Missing required positional argument: not enough x')
         if not np.isclose(sum(np.abs(tuple(args.values()))), 1.0):
