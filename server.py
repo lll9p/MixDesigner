@@ -12,7 +12,7 @@ def main():
     tornado.options.parse_command_line()
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(options.port)
-    print('Quit the server with Control-C')
+    print('Quit the server with Control-C.')
     logging.info('listen on {}'.format(options.port))
     tornado.ioloop.IOLoop.instance().start()
 
