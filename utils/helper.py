@@ -13,7 +13,7 @@ def input_y_helper(base_arr, flag=False):
 
 
 def coded_helper(model):
-    p=model.p
+    p=model.point
     base_arr=model.base_arr
     r=[]
     for l in base_arr:
