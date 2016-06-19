@@ -48,6 +48,7 @@ class APIHandler(BaseAPIHandler):
         lowerbound = self.get_arguments('lowerbound')
         model = models.__models__[model_name](point, lower_bounds=lowerbound)
         coded = utils.helper.coded_helper(model)
+        self.set_header('Content-Type', 'application/javascript')
         self.write(json.dumps({'code': coded}))
 
     def post(self, *kw, **args):

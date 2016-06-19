@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import seaborn as sn
 sn.set(font='WenQUanYi Micro Hei')
-matplotlib.use('TkAgg')
+matplotlib.use('TkAgg')#maybe not
 # my ternary implemental
 corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])  # cos(30)
 triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
