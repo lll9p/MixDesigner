@@ -101,9 +101,9 @@ class SimplexCentroid():
 
 class SimplexCentroidLowerConstraints(SimplexCentroid):
 
-    def __init__(self, p, bounds):
+    def __init__(self, p, lowerbounds):
         SimplexCentroid.__init__(self, p)
-        self.Z = self.transform_matrix(*bounds)
+        self.Z = self.transform_matrix(*lowerbounds)
 
     def z(self, **args):
         '''
