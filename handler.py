@@ -45,7 +45,10 @@ class APIHandler(BaseAPIHandler):
             experiment_id = -1
             logging.info('experiment_id name not FOUND.')
         point = int(self.get_argument('point'))
-        lowerbound = self.get_arguments('lowerbound')
+        try:
+            lowerbound = self.get_arguments('lowerbound')
+        except:
+            lowerbound = [0]*point
         model = models.__models__[model_name](point, lower_bounds=lowerbound)
         coded = utils.helper.coded_helper(model)
         self.set_header('Content-Type', 'application/javascript')
