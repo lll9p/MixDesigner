@@ -39,6 +39,7 @@ class APIHandler(BaseAPIHandler):
         if model_name not in _model_list:
             model_name = 'missing'
             logging.info('model_name not FOUND.')
+        #-------
         try:
             experiment_id = int(experiment_id)
         except:
@@ -48,11 +49,13 @@ class APIHandler(BaseAPIHandler):
         try:
             lowerbound = self.get_arguments('lowerbound')
         except:
-            lowerbound = [0]*point
+            lowerbound = [0] * point
         model = models.__models__[model_name](point, lower_bounds=lowerbound)
         coded = utils.helper.coded_helper(model)
+        result = {'coded':coded}
+        #--------
         self.set_header('Content-Type', 'application/javascript')
-        self.write(json.dumps({'code': coded}))
+        self.write(json.dumps(result))
 
     def post(self, *kw, **args):
         pass
