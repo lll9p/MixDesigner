@@ -45,8 +45,7 @@ class APIHandler(BaseAPIHandler):
         except:
             experiment_id = -1
             logging.info('experiment_id name not FOUND.')
-        point = int(self.get_argument('point'))
-        try:
+            point = int(self.get_argument('point'))
             lowerbound = self.get_arguments('lowerbound')
         except:
             lowerbound = [0] * point
