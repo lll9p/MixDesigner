@@ -42,15 +42,16 @@ class APIHandler(BaseAPIHandler):
         # -------
         try:
             experiment_id = int(experiment_id)
-        except:
-            experiment_id = -1
-            logging.info('experiment_id name not FOUND.')
             point = int(self.get_argument('point'))
             lowerbound = self.get_arguments('lowerbound')
         except:
-            lowerbound = [0] * point
-        model = models.__models__[model_name](point, lower_bounds=lowerbound)
-        coded = utils.helper.coded_helper(model)
+            logging.info('experiment_id name not FOUND.')
+        try:
+            model = models.__models__[model_name](point, lower_bounds=lowerbound)
+            coded = utils.helper.coded_helper(model)
+        except:
+            coded=''
+            logging.info('EXCEPTION!')
         result = {'coded': coded}
         # --------
         self.set_header('Content-Type', 'application/javascript')
