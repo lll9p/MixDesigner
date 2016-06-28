@@ -48,7 +48,8 @@ class APIHandler(BaseAPIHandler):
             logging.info('experiment_id name not FOUND.')
         try:
             model = models.__models__[model_name](point, lower_bounds=lowerbound)
-            coded = utils.helper.coded_helper(model)
+            coded_y = utils.helper.coded_helper(model)
+            temp = ''
         except:
             coded=''
             logging.info('EXCEPTION!')
