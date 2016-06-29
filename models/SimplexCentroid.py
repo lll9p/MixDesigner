@@ -24,7 +24,9 @@ class SimplexCentroid():
 
     def __init__(self, point, lower_bounds=None, upper_bounds=None, interest_area=None):
         self.point = point
-        self.transform_maxtix = self._transform_matrix(*lower_bounds)
+        if lower_bounds is None:
+            lower_bounds = [0] * point
+        self.transform_matrix = self._transform_matrix(*lower_bounds)
         self.yf = dict()
         self.vf = dict()
         nums = range(1, self.point + 1)
