@@ -83,7 +83,7 @@ class SimplexCentroid():
         '''
         same as self.value, but is the list version
         caculate the value with specific X
-        X is array-like
+        X is array of arrays
         @useage:
             predict(X)
         '''
@@ -99,40 +99,3 @@ class SimplexCentroid():
                 su += t
             r.append(su)
         return r
-
-
-class SimplexCentroidLowerConstraints(SimplexCentroid):
-
-    def __init__(self, p, lowerbounds):
-        SimplexCentroid.__init__(self, p)
-        self.Z = self.transform_matrix(*lowerbounds)
-
-    def z(self, **args):
-        '''
-        z = Z*x.T
-        return real value of x
-        @useage:
-            value_real(x1=0,x2=0,x3=0)
-        '''
-        if len(args) != self.point:
-            raise TypeError(
-                'Missing required positional argument: not enough x')
-        if not np.isclose(sum(np.abs(tuple(args.values()))), 1.0):
-            raise ValueError(
-                'Sumutation of x should be 1, and x should be positive')
-        return self.Z * np.matrix(tuple(args[i] for i in sorted(args))).T
-
-    @staticmethod
-    def transform_matrix(*args):
-        '''
-        @useage:
-            transform_matrix(x1_bound,x2_bound...)
-        m.dot(Z.T)
-        '''
-        m = []
-        p = len(args)
-        s = 1 - sum(args)
-        for i, a in enumerate(args):
-            m.append([a] * p)
-            m[-1][i] += s
-        return np.matrix(m)
