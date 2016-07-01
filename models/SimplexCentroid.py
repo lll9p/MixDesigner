@@ -81,8 +81,6 @@ class SimplexCentroid():
 
     def predict(self, X):
         '''
-        same as self.value, but is the list version
-        caculate the value with specific X
         X is array of arrays
         @useage:
             predict(X)
