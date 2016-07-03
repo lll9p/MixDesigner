@@ -63,6 +63,21 @@ class SimplexCentroid():
             m[-1][i] += s
         return np.matrix(m)
 
+    def fit(self, y):
+        '''
+        generate the formula with specific y, y be experimental results
+        assume y'order by model.base_arr
+        @useage:
+            model.fit(y)
+        '''
+        y = {k: y[''.join(map(str, k))] for k in self.base_arr}
+        if len(self.base_arr) != len(y):
+            raise TypeError(
+                'Missing required positional argument: not enugh y')
+        self.yf = tuple(sum(self._ftree[k][yk] * y[yk]
+                            for yk in self._ftree[k]) for k in self.base_arr)
+        return self.yf
+
     def fit_ydict(self, y):
         '''
         generate the formula with specific y, y be experimental results
@@ -79,20 +94,6 @@ class SimplexCentroid():
                             for yk in self._ftree[k]) for k in self.base_arr)
         return self.yf
 
-    def fit(self, y):
-        '''
-        generate the formula with specific y, y be experimental results
-        assume y'order by model.base_arr
-        @useage:
-            model.fit(y)
-        '''
-        y = {k: y[''.join(map(str, k))] for k in self.base_arr}
-        if len(self.base_arr) != len(y):
-            raise TypeError(
-                'Missing required positional argument: not enugh y')
-        self.yf = tuple(sum(self._ftree[k][yk] * y[yk]
-                            for yk in self._ftree[k]) for k in self.base_arr)
-        return self.yf
     def predict(self, X):
         '''
         X is array of arrays
