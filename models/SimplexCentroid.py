@@ -70,6 +70,8 @@ class SimplexCentroid():
         @useage:
             model.fit(y)
         '''
+        ys = [''.join([str(n) for n in arr]) for arr in self.base_arr]
+        y = dict(zip(ys, y))  # so ugly...
         y = {k: y[''.join(map(str, k))] for k in self.base_arr}
         if len(y) != self.point:
             raise TypeError(
