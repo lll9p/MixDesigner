@@ -89,7 +89,7 @@ class SimplexCentroid():
             make_yf(y)
         '''
         y = {k: y[''.join(map(str, k))] for k in self.base_arr}
-        if len(y) != self.point:
+        if len(y) != len(self.base_arr):
             raise TypeError(
                 'Missing required positional argument: not enugh y')
         self.yf = tuple(sum(self._ftree[k][yk] * y[yk]
