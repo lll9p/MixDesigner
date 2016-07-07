@@ -65,7 +65,7 @@ class SimplexCentroid():
 
     def fit(self, y):
         '''
-        generate the formula with specific y, y be experimental results
+        generate the formula with specific y, y be experiment's results
         assume y'order by model.base_arr
         @useage:
             model.fit(y)
