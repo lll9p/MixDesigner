@@ -70,10 +70,10 @@ class SimplexCentroid():
         @useage:
             model.fit(y)
         '''
-        ys = [''.join([str(n) for n in arr]) for arr in self.base_arr]
+        ys = [''.join(map(str,arr)) for arr in self.base_arr]
         y = dict(zip(ys, y))  # so ugly...
         y = {k: y[''.join(map(str, k))] for k in self.base_arr}
-        if len(y) != self.point:
+        if len(y) != len(self.base_arr):
             raise TypeError(
                 'Missing required positional argument: not enugh y')
         self.yf = tuple(sum(self._ftree[k][yk] * y[yk]
