@@ -31,11 +31,20 @@ class SimplexCentroid():
             self.lower_bounds = [0] * point
         if upper_bounds is None:
             self.upper_bounds = [1] * point
-        self.transform_matrix = self._transform_matrix(*self.lower_bounds)
-        self._response_surface_coef = None
         nums = range(1, self.point + 1)
         self.test_points = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num), nums)))
+        self.M = self._transform_matrix(*self.lower_bounds)
+        self.Z = []
+
+        for test_point in self.test_points:
+            base_arr = [0.] * self.point
+            for i in test_point:
+                print(i)
+                base_arr[i - 1] = 1. / len(test_point)
+            self.Z.append(base_arr)
+        self.X = None
+        self._response_surface_coef = None
 
     @staticmethod
     def _transform_matrix(*args):
@@ -61,7 +70,7 @@ class SimplexCentroid():
         '''
         if len(y) != len(self.test_points):
             raise TypeError(
-                'Missing required positional argument: not enugh y')
+                'Missing required positional argument: y\'s length not match test_points')
         # coefficients of response surface
         _response_surface_coef = []
         for i, test_point in enumerate(self.test_points):
@@ -86,7 +95,7 @@ class SimplexCentroid():
         for x in X:
             if len(x) != self.point:
                 raise TypeError(
-                    'Missing required positional argument: not enough x')
+                    'Missing required positional argument: x\'s length not match test_points')
             su = 0
             for t, v in zip(self._response_surface_coef, self.test_points):
                 for j in v:
