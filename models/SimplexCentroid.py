@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-'''
-2 to 10 components
-'''
 import numpy as np
 from itertools import combinations, chain
 from functools import reduce
@@ -12,49 +9,27 @@ class SimplexCentroid():
     '''
     TODO: should be use helper to help input data, fix the order of y
     @usage:
-        my_design = SimplexCentroid(p=3)
-        my_design.formula(y1=63.1,y2=29.0,y3=22.2,y12=50.6,y13=44.5,y23=26.5,y123=40.3})
-        Or,
-        y = {'y1':63.1,'y2':29.0,'y3':22.2,'y12':50.6,
-            'y13':44.5,'y23':26.5,'y123':40.3}
-        my_design.formula(**y)
-        Or,
-        my_design.formula('3d',**y)
-        x = {'x1':0.4,'x2':0.5,'x3':0.1}
-        my_design.predict(X)
+        model = SimplexCentroid(5,[0.6,0,0,0,0)
+        model.fit(y)
+        model.predict(X)
     '''
 
-    def __init__(self, point, lower_bounds=None, upper_bounds=None, interest_area=None):
+    def __init__(self, point, lower_bounds=None, upper_bounds=None):
         self.point = point
-        self.lower_bounds = lower_bounds
-        self.upper_bounds = upper_bounds
-        if lower_bounds is None:
-            self.lower_bounds = [0] * point
-        if upper_bounds is None:
-            self.upper_bounds = [1] * point
+        self.lower_bounds = np.array(
+            lower_bounds if lower_bounds else [0] * self.point)
+        self.upper_bounds = np.array(
+            upper_bounds if upper_bounds else [1] * self.point)
         nums = range(self.point)
         self.test_points = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num + 1), nums)))
-        self.M = self._transform_matrix(*self.lower_bounds)
+        # transform_matrix
+        self.M = self.lower_bounds.repeat(self.point).reshape(
+            (self.point, self.point)) + np.eye(self.point) * (1 - self.lower_bounds.sum())
         self.Z = np.array(
-            [[1. / len(p) if i in p else 0. for i in range(5)] for p in self.test_points])
+            [[1. / len(p) if i in p else 0. for i in range(self.point)] for p in self.test_points])
         self.X = self.Z.dot(self.M.T)  # at the opposite Z=X*M.T.I
         self._response_surface_coef = None
-
-    @staticmethod
-    def _transform_matrix(*args):
-        '''
-        @useage:
-            transform_matrix(x1_bound,x2_bound...)
-        m.dot(Z.T)
-        '''
-        m = []
-        p = len(args)
-        s = 1 - sum(args)
-        for i, a in enumerate(args):
-            m.append([a] * p)
-            m[-1][i] += s
-        return np.array(m)
 
     def fit(self, y):
         '''
@@ -87,15 +62,19 @@ class SimplexCentroid():
             model.predict(X)
         '''
         try:
-            X_predict = np.array(X)
+            Z = np.array(X).dot(np.linalg.inv(self.M.T))
         except:
             raise TypeError(
                 'X is not a valid array-like object!')
-        if X_predict.shape[1] != self.point:
+        if Z.ndim != 2:
+            if Z.shape[0] != self.point:
+                raise TypeError(
+                    'X is not a 2d array-like object!')
+        if Z.shape[1] != self.point:
             raise TypeError(
                 'Missing required positional argument: x\'s length not match test_points')
         prediction = np.apply_along_axis(lambda x: sum(reduce(lambda a, b: a * b, x.take(test_point_pos)) *
-                                                       coef for coef, test_point_pos in zip(self._response_surface_coef, self.test_points)), 1, X_predict)
+                                                       coef for coef, test_point_pos in zip(self._response_surface_coef, self.test_points)), 1, Z)
         return prediction
 
     def __str__(self):
