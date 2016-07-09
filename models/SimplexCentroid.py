@@ -31,19 +31,13 @@ class SimplexCentroid():
             self.lower_bounds = [0] * point
         if upper_bounds is None:
             self.upper_bounds = [1] * point
-        nums = range(1, self.point + 1)
+        nums = range(self.point)
         self.test_points = tuple(chain.from_iterable(
-            map(lambda num: combinations(nums, num), nums)))
+            map(lambda num: combinations(nums, num + 1), nums)))
         self.M = self._transform_matrix(*self.lower_bounds)
-        self.Z = []
-
-        for test_point in self.test_points:
-            base_arr = [0.] * self.point
-            for i in test_point:
-                print(i)
-                base_arr[i - 1] = 1. / len(test_point)
-            self.Z.append(base_arr)
-        self.X = None
+        self.Z = np.array(
+            [[1. / len(p) if i in p else 0. for i in range(5)] for p in self.test_points])
+        self.X = self.Z.dot(self.M.T)  # at the opposite Z=X*M.T.I
         self._response_surface_coef = None
 
     @staticmethod
@@ -59,7 +53,7 @@ class SimplexCentroid():
         for i, a in enumerate(args):
             m.append([a] * p)
             m[-1][i] += s
-        return np.matrix(m)
+        return np.array(m)
 
     def fit(self, y):
         '''
@@ -99,7 +93,7 @@ class SimplexCentroid():
             su = 0
             for t, v in zip(self._response_surface_coef, self.test_points):
                 for j in v:
-                    t *= x[j - 1]
+                    t *= x[j]
                 su += t
             r.append(su)
         return r
