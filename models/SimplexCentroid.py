@@ -5,6 +5,7 @@
 '''
 import numpy as np
 from itertools import combinations, chain
+from functools import reduce
 
 
 class SimplexCentroid():
@@ -83,20 +84,19 @@ class SimplexCentroid():
         '''
         X is array of arrays
         @useage:
-            predict(X)
+            model.predict(X)
         '''
-        r = []
-        for x in X:
-            if len(x) != self.point:
-                raise TypeError(
-                    'Missing required positional argument: x\'s length not match test_points')
-            su = 0
-            for t, v in zip(self._response_surface_coef, self.test_points):
-                for j in v:
-                    t *= x[j]
-                su += t
-            r.append(su)
-        return r
+        try:
+            X_predict = np.array(X)
+        except:
+            raise TypeError(
+                'X is not a valid array-like object!')
+        if X_predict.shape[1] != self.point:
+            raise TypeError(
+                'Missing required positional argument: x\'s length not match test_points')
+        prediction = np.apply_along_axis(lambda x: sum(reduce(lambda a, b: a * b, x.take(test_point_pos)) *
+                                                       coef for coef, test_point_pos in zip(self._response_surface_coef, self.test_points)), 1, X_predict)
+        return prediction
 
     def __str__(self):
         return ('{:+.2f}*{}' * len(self.test_points)).format(
