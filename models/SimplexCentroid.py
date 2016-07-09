@@ -25,14 +25,16 @@ class SimplexCentroid():
 
     def __init__(self, point, lower_bounds=None, upper_bounds=None, interest_area=None):
         self.point = point
+        self.lower_bounds = lower_bounds
+        self.upper_bounds = upper_bounds
         if lower_bounds is None:
             self.lower_bounds = [0] * point
         if upper_bounds is None:
             self.upper_bounds = [1] * point
         self.transform_matrix = self._transform_matrix(*self.lower_bounds)
-        self._response_surface_coef = []
+        self._response_surface_coef = None
         nums = range(1, self.point + 1)
-        self.base_arr = tuple(chain.from_iterable(
+        self.test_points = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num), nums)))
 
     @staticmethod
@@ -53,26 +55,26 @@ class SimplexCentroid():
     def fit(self, y):
         '''
         generate the formula with specific y, y be experiment's results
-        assume y's order same as model.base_arr
+        assume y's order same as model.test_points
         @useage:
             model.fit(y)
         '''
-        if len(y) != len(self.base_arr):
+        if len(y) != len(self.test_points):
             raise TypeError(
                 'Missing required positional argument: not enugh y')
         # coefficients of response surface
         _response_surface_coef = []
-        for i, test_point in enumerate(self.base_arr):
+        for i, test_point in enumerate(self.test_points):
             r = len(test_point)
             temp = 0
             for j in range(1, r + 1):
                 for test_point_pos in combinations(test_point, j):
                     t = len(test_point_pos)
                     # From 关颖男's 《混料试验设计》 Page:64
-                    temp += y[self.base_arr.index(test_point_pos)] * \
+                    temp += y[self.test_points.index(test_point_pos)] * \
                         r * (-1)**(r - t) * t**(r - 1)
             _response_surface_coef.append(temp)
-        return _response_surface_coef
+        self._response_surface_coef = _response_surface_coef
 
     def predict(self, X):
         '''
@@ -86,7 +88,7 @@ class SimplexCentroid():
                 raise TypeError(
                     'Missing required positional argument: not enough x')
             su = 0
-            for t, v in zip(self.yf, self.base_arr):
+            for t, v in zip(self._response_surface_coef, self.test_points):
                 for j in v:
                     t *= x[j - 1]
                 su += t
@@ -94,11 +96,10 @@ class SimplexCentroid():
         return r
 
     def __str__(self):
-        from itertools import chain
-        return ('{:+.2f}*{}' * len(self.base_arr)).format(
+        return ('{:+.2f}*{}' * len(self.test_points)).format(
             *chain.from_iterable(
-                zip(self._response_surface_coef, [('z_{}*' * len(arr))
-                                                  .format(*map(str, arr))[:-1] for arr in self.base_arr])))
+                zip(self._response_surface_coef, [('z_{}*' * len(test_point))
+                                                  .format(*map(str, test_point))[:-1] for test_point in self.test_points])))
 
     def __repr__(self):
         return \
