@@ -4,7 +4,6 @@ import logging
 import json
 import tornado.web
 import models
-import utils
 _model_list = list(models.__models__.keys())
 
 
@@ -48,8 +47,6 @@ class APIHandler(BaseAPIHandler):
             logging.info('experiment_id name not FOUND.')
         try:
             model = models.__models__[model_name](point, lower_bounds=lowerbound)
-            coded_y = utils.helper.coded_helper(model)
-            temp = ''
         except:
             coded=''
             logging.info('EXCEPTION!')

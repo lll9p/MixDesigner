@@ -24,11 +24,11 @@ class SimplexCentroid():
         self.test_points = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num + 1), nums)))
         # transform_matrix
-        self.M = self.lower_bounds.repeat(self.point).reshape(
+        self._M = self.lower_bounds.repeat(self.point).reshape(
             (self.point, self.point)) + np.eye(self.point) * (1 - self.lower_bounds.sum())
-        self.Z = np.array(
+        self._Z = np.array(
             [[1. / len(p) if i in p else 0. for i in range(self.point)] for p in self.test_points])
-        self.X = self.Z.dot(self.M.T)  # at the opposite Z=X*M.T.I
+        self._X = self._Z.dot(self._M.T)  # at the opposite Z=X*M.T.I
         self._response_surface_coef = None
 
     def fit(self, y):
@@ -62,14 +62,15 @@ class SimplexCentroid():
             model.predict(X)
         '''
         try:
-            Z = np.array(X).dot(np.linalg.inv(self.M.T))
+            X_ = np.array(X)
+            if X_.ndim != 2:
+                if X_.ndim == 1:
+                    X_ = X_.reshape((1, self.point))
+            Z = X_.dot(np.linalg.inv(self._M.T))
         except:
             raise TypeError(
                 'X is not a valid array-like object!')
-        if Z.ndim != 2:
-            if Z.shape[0] != self.point:
-                raise TypeError(
-                    'X is not a 2d array-like object!')
+
         if Z.shape[1] != self.point:
             raise TypeError(
                 'Missing required positional argument: x\'s length not match test_points')
