@@ -14,7 +14,8 @@ class SimplexCentroid():
         my_design = SimplexCentroid(p=3)
         my_design.formula(y1=63.1,y2=29.0,y3=22.2,y12=50.6,y13=44.5,y23=26.5,y123=40.3})
         Or,
-        y = {'y1':63.1,'y2':29.0,'y3':22.2,'y12':50.6,'y13':44.5,'y23':26.5,'y123':40.3}
+        y = {'y1':63.1,'y2':29.0,'y3':22.2,'y12':50.6,
+            'y13':44.5,'y23':26.5,'y123':40.3}
         my_design.formula(**y)
         Or,
         my_design.formula('3d',**y)
@@ -25,28 +26,14 @@ class SimplexCentroid():
     def __init__(self, point, lower_bounds=None, upper_bounds=None, interest_area=None):
         self.point = point
         if lower_bounds is None:
-            lower_bounds = [0] * point
-        self.transform_matrix = self._transform_matrix(*lower_bounds)
-        self.yf = dict()
-        self.vf = dict()
+            self.lower_bounds = [0] * point
+        if upper_bounds is None:
+            self.upper_bounds = [1] * point
+        self.transform_matrix = self._transform_matrix(*self.lower_bounds)
+        self._response_surface_coef = []
         nums = range(1, self.point + 1)
         self.base_arr = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num), nums)))
-        self._ftree = self._make_ftree(self.base_arr)
-
-    @staticmethod
-    def _make_ftree(base_arr):
-        '''
-        '''
-        tree = dict()
-        for k in base_arr:
-            r = len(k)
-            tree[k] = {}
-            for j in range(1, r + 1):
-                for coefk in combinations(k, j):
-                    t = len(coefk)
-                    tree[k].update({coefk: r * (-1)**(r - t) * t**(r - 1)})
-        return tree
 
     @staticmethod
     def _transform_matrix(*args):
@@ -66,35 +53,26 @@ class SimplexCentroid():
     def fit(self, y):
         '''
         generate the formula with specific y, y be experiment's results
-        assume y'order by model.base_arr
+        assume y's order same as model.base_arr
         @useage:
             model.fit(y)
         '''
-        ys = [''.join(map(str,arr)) for arr in self.base_arr]
-        y = dict(zip(ys, y))  # so ugly...
-        y = {k: y[''.join(map(str, k))] for k in self.base_arr}
         if len(y) != len(self.base_arr):
             raise TypeError(
                 'Missing required positional argument: not enugh y')
-        self.yf = tuple(sum(self._ftree[k][yk] * y[yk]
-                            for yk in self._ftree[k]) for k in self.base_arr)
-        return self.yf
-
-    def fit_ydict(self, y):
-        '''
-        generate the formula with specific y, y be experimental results
-        @useage:
-            y = {'1':v1,'2':v2,'3':v3,...,'123':v123}
-            y = {'1': 5, '12': 10, '123': 13, '13': 2, '2': 11, '23': 10, '3': 8}
-            make_yf(y)
-        '''
-        y = {k: y[''.join(map(str, k))] for k in self.base_arr}
-        if len(y) != len(self.base_arr):
-            raise TypeError(
-                'Missing required positional argument: not enugh y')
-        self.yf = tuple(sum(self._ftree[k][yk] * y[yk]
-                            for yk in self._ftree[k]) for k in self.base_arr)
-        return self.yf
+        # coefficients of response surface
+        _response_surface_coef = []
+        for i, test_point in enumerate(self.base_arr):
+            r = len(test_point)
+            temp = 0
+            for j in range(1, r + 1):
+                for test_point_pos in combinations(test_point, j):
+                    t = len(test_point_pos)
+                    # From 关颖男's 《混料试验设计》 Page:64
+                    temp += y[self.base_arr.index(test_point_pos)] * \
+                        r * (-1)**(r - t) * t**(r - 1)
+            _response_surface_coef.append(temp)
+        return _response_surface_coef
 
     def predict(self, X):
         '''
@@ -114,3 +92,19 @@ class SimplexCentroid():
                 su += t
             r.append(su)
         return r
+
+    def __str__(self):
+        from itertools import chain
+        return ('{:+.2f}*{}' * len(self.base_arr)).format(
+            *chain.from_iterable(
+                zip(self._response_surface_coef, [('z_{}*' * len(arr))
+                                                  .format(*map(str, arr))[:-1] for arr in self.base_arr])))
+
+    def __repr__(self):
+        return \
+            '''
+Point:\t{}
+LowerBounds:\t{}
+UpperBounds:\t{}
+Response surface coef:\t{}
+            '''.format(self.point, self.lower_bounds, self.upper_bounds, self.__str__())
