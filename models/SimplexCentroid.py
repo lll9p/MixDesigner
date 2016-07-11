@@ -80,6 +80,7 @@ class SimplexCentroid():
         if Z.shape[1] != self.point:
             raise TypeError(
                 'Missing required positional argument: x\'s length not match test_points')
+        # ugly code NEED reform
         prediction = np.apply_along_axis(lambda x: sum(reduce(lambda a, b: a * b, x.take(test_point_pos)) *
                                                        coef for coef, test_point_pos in zip(self._response_surface_coef, self.test_points)), 1, Z)
         return prediction
@@ -88,6 +89,7 @@ class SimplexCentroid():
         if not self._response_surface_coef:
             model_str = ''
         else:
+            # ugly code NEED reform
             model_str = ('{:+.2f}*{}' * len(self.test_points)).format(
                 *chain.from_iterable(
                     zip(self._response_surface_coef, [('z_{}*' * len(test_point))
