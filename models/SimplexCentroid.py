@@ -25,9 +25,15 @@ class SimplexCentroid():
             map(lambda num: combinations(nums, num + 1), nums)))
         # transform_matrix
         self._M = self.lower_bounds.repeat(self.point).reshape(
-            (self.point, self.point)) + np.eye(self.point) * (1 - self.lower_bounds.sum())
+            (self.point, self.point)) \
+            + np.eye(self.point) \
+            * (1 - self.lower_bounds.sum())
         self._Z = np.array(
-            [[1. / len(p) if i in p else 0. for i in range(self.point)] for p in self.test_points])
+            [
+                [1. / len(p) if i in p else 0. for i in range(self.point)]
+                for p in self.test_points
+            ]
+        )
         self._X = self._Z.dot(self._M.T)  # at the opposite Z=X*M.T.I
         self._response_surface_coef = None
 
@@ -79,10 +85,14 @@ class SimplexCentroid():
         return prediction
 
     def __str__(self):
-        return ('{:+.2f}*{}' * len(self.test_points)).format(
-            *chain.from_iterable(
-                zip(self._response_surface_coef, [('z_{}*' * len(test_point))
-                                                  .format(*map(str, test_point))[:-1] for test_point in self.test_points])))
+        if not self._response_surface_coef:
+            model_str = ''
+        else:
+            model_str = ('{:+.2f}*{}' * len(self.test_points)).format(
+                *chain.from_iterable(
+                    zip(self._response_surface_coef, [('z_{}*' * len(test_point))
+                                                      .format(*map(str, test_point))[:-1] for test_point in self.test_points])))
+        return model_str
 
     def __repr__(self):
         return \
