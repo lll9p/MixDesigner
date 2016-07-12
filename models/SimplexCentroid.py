@@ -2,7 +2,6 @@
 # coding: utf-8
 import numpy as np
 from itertools import combinations, chain
-from functools import reduce
 
 
 class SimplexCentroid():
@@ -34,7 +33,7 @@ class SimplexCentroid():
                 for p in self.test_points
             ]
         )
-        self._X = self._Z.dot(self._M.T)  # at the opposite Z=X*M.T.I
+        self._X = self._Z.dot(self._M.T)  # at the opposite: Z=X*M.T.I
         self._response_surface_coef = None
 
     def fit(self, y):
@@ -46,7 +45,8 @@ class SimplexCentroid():
         '''
         if len(y) != len(self.test_points):
             raise TypeError(
-                'Missing required positional argument: y\'s length not match test_points')
+                'Missing required positional argument: \
+                y\'s length not match test_points')
         # coefficients of response surface
         _response_surface_coef = []
         for i, test_point in enumerate(self.test_points):
@@ -79,10 +79,18 @@ class SimplexCentroid():
 
         if Z.shape[1] != self.point:
             raise TypeError(
-                'Missing required positional argument: x\'s length not match test_points')
+                'Missing required positional argument: \
+                x\'s length not match test_points')
         # ugly code NEED reform
-        prediction = np.apply_along_axis(lambda x: sum(reduce(lambda a, b: a * b, x.take(test_point_pos)) *
-                                                       coef for coef, test_point_pos in zip(self._response_surface_coef, self.test_points)), 1, Z)
+        prediction = np.apply_along_axis(
+            lambda x:
+            sum(
+                x.take(test_point_pos).prod() * coef
+                for coef, test_point_pos in
+                zip(self._response_surface_coef, self.test_points)
+            ),
+            1,
+            Z)
         return prediction
 
     def __str__(self):
@@ -92,8 +100,12 @@ class SimplexCentroid():
             # ugly code NEED reform
             model_str = ('{:+.2f}*{}' * len(self.test_points)).format(
                 *chain.from_iterable(
-                    zip(self._response_surface_coef, [('z_{}*' * len(test_point))
-                                                      .format(*map(str, test_point))[:-1] for test_point in self.test_points])))
+                    zip(self._response_surface_coef,
+                        [('z_{}*' * len(test_point))
+                         .format(*map(str, test_point))[:-1]
+                         for test_point in self.test_points])
+                )
+            )
         return model_str
 
     def __repr__(self):
@@ -103,4 +115,8 @@ Point:\t{}
 LowerBounds:\t{}
 UpperBounds:\t{}
 Response surface coef:\t{}
-            '''.format(self.point, self.lower_bounds, self.upper_bounds, self.__str__())
+            '''.format(self.point,
+                       self.lower_bounds,
+                       self.upper_bounds,
+                       self.__str__()
+                       )
