@@ -59,7 +59,7 @@ class SimplexCentroid():
                     temp += y[self.test_points.index(test_point_pos)] * \
                         r * (-1)**(r - t) * t**(r - 1)
             _response_surface_coef.append(temp)
-        self._response_surface_coef = _response_surface_coef
+        self._response_surface_coef = np.array(_response_surface_coef)
 
     def predict(self, X):
         '''
@@ -68,29 +68,25 @@ class SimplexCentroid():
             model.predict(X)
         '''
         try:
-            X_ = np.array(X)
-            if X_.ndim != 2:
-                if X_.ndim == 1:
-                    X_ = X_.reshape((1, self.point))
-            Z = X_.dot(np.linalg.inv(self._M.T))
+            if type(X) != np.ndarray:
+                X = np.array(X)
+            if X.ndim != 2:
+                if X.ndim == 1:
+                    X = X.reshape((1, self.point))
+            Z = X.dot(np.linalg.inv(self._M.T))
         except:
             raise TypeError(
                 'X is not a valid array-like object!')
-
         if Z.shape[1] != self.point:
             raise TypeError(
                 'Missing required positional argument: \
                 x\'s length not match test_points')
-        # ugly code NEED reform
-        prediction = np.apply_along_axis(
-            lambda x:
-            sum(
-                x.take(test_point_pos).prod() * coef
-                for coef, test_point_pos in
-                zip(self._response_surface_coef, self.test_points)
-            ),
-            1,
-            Z)
+        # from each Z, take the points and make a prod,
+        # then multiply coef and sums up
+        prediction = self._response_surface_coef.dot(
+            [Z.take(test_point_pos, 1).prod(1)
+             for test_point_pos in self.test_points]
+        )
         return prediction
 
     def __str__(self):
