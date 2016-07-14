@@ -6,7 +6,7 @@ from itertools import combinations, chain
 
 class SimplexCentroid():
     '''
-    TODO: should be use helper to help input data, fix the order of y
+    SimplexCentroid model
     @usage:
         model = SimplexCentroid(5,[0.6,0,0,0,0)
         model.fit(y)
@@ -33,7 +33,8 @@ class SimplexCentroid():
                 for p in self.test_points
             ]
         )
-        self._X = self._Z.dot(self._M.T)  # at the opposite: Z=X*M.T.I
+        # Z=X*M.T.I
+        self._X = self._Z.dot(self._M.T)
         self._response_surface_coef = None
 
     def fit(self, y):
