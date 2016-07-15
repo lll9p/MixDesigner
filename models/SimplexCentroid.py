@@ -8,7 +8,7 @@ class SimplexCentroid():
     '''
     SimplexCentroid model
     @usage:
-        model = SimplexCentroid(5,[0.6,0,0,0,0)
+        model = SimplexCentroid(5,[0.6,0,0,0,0])
         model.fit(y)
         model.predict(X)
     '''

@@ -1,86 +1,119 @@
 #!/usr/bin/env python
-'''
-2 to 20 components
-'''
+# coding: utf-8
 import numpy as np
 from itertools import combinations, chain
 
 
 class SimplexLattice():
     '''
+    SimplexLattice model
     @usage:
-        my_design = SimplexLattice(p=3)
-
-
-        my_design.formula(yname='3d',y1=63.1,y2=29.0,y3=22.2,y12=50.6,y13=44.5,y23=26.5,y123=40.3})
-        Or,
-        y = {'y1':63.1,'y2':29.0,'y3':22.2,'y12':50.6,'y13':44.5,'y23':26.5,'y123':40.3}
-        my_design.formula(yname='3d',**y)
-        Or,
-        my_design.formula('3d',**y)
-
-
-        x = {'x1':0.4,'x2':0.5,'x3':0.1}
-        my_design.value(yname='3d',**x)
+        model = SimplexLattice(5,[0.6,0,0,0,0])
+        model.fit(y)
+        model.predict(X)
     '''
 
-    def __init__(self, m=2, p=3):
-        self.p = p
-        self.yf = dict()
-        self.vf = dict()
-        nums = range(1, self.p + 1)
-        self.base_arr = tuple(chain.from_iterable(
-            map(lambda num: combinations(nums, num), nums)))
-        self._ftree = self._make_ftree()
+    def __init__(self, point, lower_bounds=None, upper_bounds=None):
+        self.point = point
+        self.lower_bounds = np.array(
+            lower_bounds if lower_bounds else [0] * self.point)
+        self.upper_bounds = np.array(
+            upper_bounds if upper_bounds else [1] * self.point)
+        nums = range(self.point)
+        self.test_points = tuple(chain.from_iterable(
+            map(lambda num: combinations(nums, num + 1), nums)))
+        # transform_matrix
+        self._M = self.lower_bounds.repeat(self.point).reshape(
+            (self.point, self.point)) \
+            + np.eye(self.point) \
+            * (1 - self.lower_bounds.sum())
+        self._Z = np.array(
+            [
+                [1. / len(p) if i in p else 0. for i in range(self.point)]
+                for p in self.test_points
+            ]
+        )
+        # Z=X*M.T.I
+        self._X = self._Z.dot(self._M.T)
+        self._response_surface_coef = None
 
-    def _make_ftree(self):
+    def fit(self, y):
         '''
-        列出多项式，用混料成分代替之
-        tree = dict()
-        for k in self.base_arr:
-            r = len(k)
-            tree[k] = {}
+        generate the formula with specific y, y be experiment's results
+        assume y's order same as model.test_points
+        @useage:
+            model.fit(y)
+        '''
+        if len(y) != len(self.test_points):
+            raise TypeError(
+                'Missing required positional argument: \
+                y\'s length not match test_points')
+        # coefficients of response surface
+        _response_surface_coef = []
+        for i, test_point in enumerate(self.test_points):
+            r = len(test_point)
+            temp = 0
             for j in range(1, r + 1):
-                for coefk in combinations(k, j):
-                    t = len(coefk)
-                    tree[k].update({coefk: r * (-1)**(r - t) * t**(r - 1)})
-        return tree
-        '''
-        pass
+                for test_point_pos in combinations(test_point, j):
+                    t = len(test_point_pos)
+                    # From 关颖男's 《混料试验设计》 Page:64
+                    temp += y[self.test_points.index(test_point_pos)] * \
+                        r * (-1)**(r - t) * t**(r - 1)
+            _response_surface_coef.append(temp)
+        self._response_surface_coef = np.array(_response_surface_coef)
 
-    def fit(self, yname, y):
+    def predict(self, X):
         '''
-        generate the formula with specific y, y be experimental results
+        X is array of arrays
         @useage:
-            y = {'1':v1,'2':v2,'3':v3,...,'123':v123}
-            y = {'1': 5, '12': 10, '123': 13, '13': 2, '2': 11, '23': 10, '3': 8}
-            make_yf(yname='test1',y)
+            model.predict(X)
         '''
-        y = {k: y[''.join(map(str, k))] for k in self.base_arr}
-        if len(self.base_arr) != len(y):
+        try:
+            if type(X) != np.ndarray:
+                X = np.array(X)
+            if X.ndim != 2:
+                if X.ndim == 1:
+                    X = X.reshape((1, self.point))
+            Z = X.dot(np.linalg.inv(self._M.T))
+        except:
             raise TypeError(
-                'Missing required positional argument: not enugh y')
-        self.yf[yname] = tuple(sum(self._ftree[k][yk] * y[yk]
-                                   for yk in self._ftree[k]) for k in self.base_arr)
-        return self.yf[yname]
-
-    def predict(self, yname, x):
-        '''
-        same as self.value, but is the list version
-        caculate the value with specific x
-        @useage:
-            value('test',(1,0,0))
-        '''
-        if len(x) != self.p:
+                'X is not a valid array-like object!')
+        if Z.shape[1] != self.point:
             raise TypeError(
-                'Missing required positional argument: not enough x')
-        if not np.isclose(sum(np.abs(x)), 1.0, rtol=1e-2):
-            raise ValueError(
-                'Sumutation of x should be 1, and x should be positive')
-        su = 0
-        for t, v in zip(self.yf[yname], self.base_arr):
-            for j in v:
-                t *= x[j - 1]
-            su += t
-        return su
+                'Missing required positional argument: \
+                x\'s length not match test_points')
+        # from each Z, take the points and make a prod,
+        # then multiply coef and sums up
+        prediction = self._response_surface_coef.dot(
+            [Z.take(test_point_pos, 1).prod(1)
+             for test_point_pos in self.test_points]
+        )
+        return prediction
 
+    def __str__(self):
+        if not self._response_surface_coef:
+            model_str = ''
+        else:
+            # ugly code NEED reform
+            model_str = ('{:+.2f}*{}' * len(self.test_points)).format(
+                *chain.from_iterable(
+                    zip(self._response_surface_coef,
+                        [('z_{}*' * len(test_point))
+                         .format(*map(str, test_point))[:-1]
+                         for test_point in self.test_points])
+                )
+            )
+        return model_str
+
+    def __repr__(self):
+        return \
+            '''
+Point:\t{}
+LowerBounds:\t{}
+UpperBounds:\t{}
+Response surface coef:\t{}
+            '''.format(self.point,
+                       self.lower_bounds,
+                       self.upper_bounds,
+                       self.__str__()
+                       )
