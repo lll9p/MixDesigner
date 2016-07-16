@@ -7,6 +7,7 @@ from itertools import combinations, chain
 class SimplexLattice():
     '''
     SimplexLattice model
+    This model's split should be less then 4.
     @usage:
         model = SimplexLattice(5,[0.6,0,0,0,0])
         model.fit(y)
