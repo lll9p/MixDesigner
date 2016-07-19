@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import BaseModel
 
-class SimplexAxial():
+
+class SimplexAxial(BaseModel):
 
     def __init__(self):
         pass

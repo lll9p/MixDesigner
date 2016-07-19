@@ -2,9 +2,19 @@
 # coding: utf-8
 import numpy as np
 from itertools import combinations, chain
+import BaseModel
+# for the model simplexlattice, the higher then fourth quarter  is not need .
+import sympy
+from itertools import combinations_with_replacement
+m = 1
+p = 3
+xs = sympy.var(('x{},' * p).format(*range(p)))
+tuple(chain.from_iterable(
+    map(lambda mi: combinations_with_replacement(xs, mi + 1), range(m))))
+y_complete = sympy.Symbol('b0')
 
 
-class SimplexLattice():
+class SimplexLattice(BaseModel):
     '''
     SimplexLattice model
     This model's split should be less then 4.

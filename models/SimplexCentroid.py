@@ -4,7 +4,7 @@ import numpy as np
 from itertools import combinations, chain
 
 
-class SimplexCentroid():
+class SimplexCentroid(BaseModel):
     '''
     SimplexCentroid model
     @usage:
