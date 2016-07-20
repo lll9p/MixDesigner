@@ -3,7 +3,7 @@
 import numpy as np
 from itertools import combinations, chain
 import BaseModel
-# for the model simplexlattice, the higher then fourth quarter  is not need .
+# for the model simplexlattice, the higher then fourth quarter is not need .
 import sympy
 from itertools import combinations_with_replacement
 m = 1
@@ -12,6 +12,13 @@ xs = sympy.var(('x{},' * p).format(*range(p)))
 tuple(chain.from_iterable(
     map(lambda mi: combinations_with_replacement(xs, mi + 1), range(m))))
 y_complete = sympy.Symbol('b0')
+
+Canonical_model = {
+    1: '',  # Linear
+    2: '',  # Quadratic
+    3: '',  # Full Cubic
+    4: ''  # Special Cubic
+}
 
 
 class SimplexLattice(BaseModel):
