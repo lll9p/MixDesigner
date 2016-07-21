@@ -31,8 +31,9 @@ class SimplexLattice(BaseModel):
         model.predict(X)
     '''
 
-    def __init__(self, point, lower_bounds=None, upper_bounds=None):
+    def __init__(self, point, degree, lower_bounds=None, upper_bounds=None):
         self.point = point
+        self.degree = degree
         self.lower_bounds = np.array(
             lower_bounds if lower_bounds else [0] * self.point)
         self.upper_bounds = np.array(
