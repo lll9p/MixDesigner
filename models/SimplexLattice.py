@@ -2,8 +2,8 @@
 # coding: utf-8
 import numpy as np
 from itertools import combinations, chain
-import BaseModel
 # for the model simplexlattice, the higher then fourth quarter is not need .
+'''
 import sympy
 from itertools import combinations_with_replacement
 m = 1
@@ -12,16 +12,30 @@ xs = sympy.var(('x{},' * p).format(*range(p)))
 tuple(chain.from_iterable(
     map(lambda mi: combinations_with_replacement(xs, mi + 1), range(m))))
 y_complete = sympy.Symbol('b0')
-
-Canonical_model = {
-    1: '',  # Linear
-    2: '',  # Quadratic
-    3: '',  # Full Cubic
-    4: ''  # Special Cubic
-}
+'''
 
 
-class SimplexLattice(BaseModel):
+def canonical_polynomial(point, degree):
+    def _linear(point):
+        pass
+
+    def _quadratic(point):
+        pass
+
+    def _full_cubic(point):
+        pass
+
+    def _special_cubic(point):
+        pass
+    model_dict = {1: _linear,
+                  2: _quadratic,
+                  3: _full_cubic,
+                  4: _special_cubic,
+                  }
+    return model_dict.get(degree)(point)
+
+
+class SimplexLattice():
     '''
     SimplexLattice model
     This model's split should be less then 4.
