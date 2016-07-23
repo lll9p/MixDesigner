@@ -17,15 +17,27 @@ y_complete = sympy.Symbol('b0')
 
 def canonical_polynomial(point, degree):
     def _linear(point):
+        '''
+        degree = 1
+        '''
         pass
 
     def _quadratic(point):
+        '''
+        degree = 2
+        '''
         pass
 
     def _full_cubic(point):
+        '''
+        degree = 3
+        '''
         pass
 
     def _special_cubic(point):
+        '''
+        degree = 4
+        '''
         pass
     model_dict = {1: _linear,
                   2: _quadratic,
