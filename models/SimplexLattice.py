@@ -15,12 +15,15 @@ y_complete = sympy.Symbol('b0')
 '''
 
 
-def canonical_polynomial(point, degree):
+def canonical_polynomial_model(point, degree):
+    '''
+    return response_model,values_model
+    '''
     def _linear(point):
         '''
         degree = 1
         '''
-        pass
+        return list(range(point))
 
     def _quadratic(point):
         '''
