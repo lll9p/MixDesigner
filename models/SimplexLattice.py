@@ -23,7 +23,7 @@ def canonical_polynomial_model(point, degree):
         '''
         degree = 1
         '''
-        return list(range(point))
+        return [list(i) for i in range(point)]
 
     def _quadratic(point):
         '''
