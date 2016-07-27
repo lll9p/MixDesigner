@@ -29,6 +29,7 @@ def canonical_polynomial_model(point, degree):
         '''
         degree = 2
         '''
+        r1 = []
         return None
 
     def _full_cubic(point):
