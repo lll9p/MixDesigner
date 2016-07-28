@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 import numpy as np
-from itertools import combinations, chain
+from itertools import combinations, combinations_with_replacement, chain
 # for the model simplexlattice, the higher then fourth quarter is not need .
 '''
 import sympy
@@ -29,8 +29,8 @@ def canonical_polynomial_model(point, degree):
         '''
         degree = 2
         '''
-        r1 = []
-        return None
+
+    return list(combinations_with_replacement(range(3), 2))
 
     def _full_cubic(point):
         '''
