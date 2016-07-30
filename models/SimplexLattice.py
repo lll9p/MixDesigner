@@ -30,7 +30,8 @@ def canonical_polynomial_model(point, degree):
         degree = 2
         '''
 
-    return [list(i) for i in range(point)]+list(combinations_with_replacement(range(3), 2))
+    return [list(i) for i in range(point)] + \
+        list(combinations_with_replacement(range(3), 2))
 
     def _full_cubic(point):
         '''
