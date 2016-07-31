@@ -15,7 +15,7 @@ y_complete = sympy.Symbol('b0')
 '''
 
 
-def canonical_polynomial_model(point, degree):
+def canonical_polynomial_model_test_points(point, degree):
     '''
     return response_model,values_model
     '''
@@ -29,7 +29,6 @@ def canonical_polynomial_model(point, degree):
         '''
         degree = 2
         '''
-
     return [list(i) for i in range(point)] + \
         list(combinations_with_replacement(range(3), 2))
 
