@@ -29,14 +29,15 @@ def canonical_polynomial_model_test_points(point, degree):
         '''
         degree = 2
         '''
-    return [list(i) for i in range(point)] + \
-        list(combinations_with_replacement(range(3), 2))
+        return [list(i) for i in range(point)] + \
+            list(combinations_with_replacement(range(3), 2))
 
     def _full_cubic(point):
         '''
         degree = 3
         '''
-        pass
+        return [list(i) for i in range(point)] + \
+            list(combinations_with_replacement(range(3), 2))
 
     def _special_cubic(point):
         '''
