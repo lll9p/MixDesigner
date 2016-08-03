@@ -39,6 +39,7 @@ def canonical_polynomial_model_test_points(point, degree):
         return [list(i) for i in range(point)] + \
             list(combinations_with_replacement(range(point), 2)) + \
             list(combinations_with_replacement(range(point), 3))
+        # seems this is the wrong way to do it ...
 
     def _special_cubic(point):
         '''
