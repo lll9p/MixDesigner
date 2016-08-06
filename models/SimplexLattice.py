@@ -52,7 +52,7 @@ def canonical_polynomial_model_test_points(point, degree):
                   4: _special_cubic,
                   }
     return model_dict.get(degree)(point)
-
+    # y dict is better to user sympy
 
 class SimplexLattice():
     '''
