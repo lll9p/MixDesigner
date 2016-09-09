@@ -90,6 +90,9 @@ class SimplexCentroid():
         )
         return prediction
 
+    def score(self, X, y):
+        self.predict(X) - y
+
     def __str__(self):
         if not self._response_surface_coef:
             model_str = ''
