@@ -91,7 +91,7 @@ class SimplexCentroid():
         return prediction
 
     def score(self, X, y):
-        self.predict(X) - y
+        return np.sum(np.abs(self.predict(X) - y))/len(y)
 
     def __str__(self):
         if not self._response_surface_coef:
