@@ -8,3 +8,4 @@ Mixture experiment design helper
     model = models.SimplexCentroid(point=5, lower_bounds=[0.6,0,0,0,0])
     model.fit(y)
     model.predict(X)
+    model.score(X,y)
