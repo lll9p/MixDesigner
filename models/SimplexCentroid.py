@@ -10,9 +10,9 @@ class SimplexCentroid():
     '''
     SimplexCentroid model
     @usage:
-        model = SimplexCentroid(5,[0.6,0,0,0,0])
-        model.fit(y)
-        model.predict(X)
+    model = SimplexCentroid(5,[0.6,0,0,0,0])
+    model.fit(y)
+    model.predict(X)
     '''
 
     def __init__(self, n_point, lower_bounds=None, upper_bounds=None):
@@ -22,6 +22,7 @@ class SimplexCentroid():
         self.upper_bounds = np.array(
             upper_bounds if upper_bounds else [1] * self.n_point)
         nums = range(self.n_point)
+        # generate a powerset but void set
         self.test_points = tuple(chain.from_iterable(
             map(lambda num: combinations(nums, num + 1), nums)))
         # transform_matrix
@@ -44,7 +45,7 @@ class SimplexCentroid():
         generate the formula with specific y, y be experiment's results
         assume y's order same as model.test_points
         @useage:
-            model.fit(y)
+        model.fit(y)
         '''
         if len(y) != len(self.test_points):
             raise TypeError(
@@ -66,19 +67,19 @@ class SimplexCentroid():
 
     def predict(self, X):
         '''
-        X is array of arrays
+        X is array of arrays, x is the real value, not coded value
         @useage:
-            model.predict(X)
+        model.predict(X)
         '''
-        xnotarray = any(map(lambda x: not isinstance(
+        notarray = any(map(lambda x: not isinstance(
             x, (collections.Sequence, np.ndarray)), X))
-        X_shape = (1 if xnotarray else len(X), self.n_point)
+        shape = (1 if notarray else len(X), self.n_point)
         try:
-            X = np.reshape(X, X_shape)
+            X = np.reshape(X, shape)
             if X.ndim != 2:
                 raise TypeError(
                     'X is not a valid array-like object!')
-            if X.shape != X_shape:
+            if X.shape != shape:
                 raise TypeError(
                     'Missing required positional argument: \
                     x\'s length not match test_points')
@@ -88,11 +89,11 @@ class SimplexCentroid():
         except:
             raise TypeError(
                 'DataType of element(s) of X is wrong! Please check again.')
-        Z = X.dot(np.linalg.inv(self._M.T))
-        # from each Z, take the points and make a prod,
+        XX = X.dot(np.linalg.inv(self._M.T))
+        # from each XX, take the points and make a prod,
         # then multiply coef and then sums up
         prediction = self._response_surface_coef.dot(
-            [Z.take(test_point_pos, axis=1).prod(axis=1)
+            [XX.take(test_point_pos, axis=1).prod(axis=1)
              for test_point_pos in self.test_points]
         )
         return prediction
@@ -108,7 +109,9 @@ class SimplexCentroid():
         mesh_points = points[:, np.where(points.sum(axis=0) == 100)[0]]
         X_points = np.zeros((self.n_point, mesh_points.shape[1]), dtype=int)
         X_points[side, :] = mesh_points
-        ternary.heatmap()
+        Y = self.predict(X_points.T / 100.0)
+        data = {tuple(points): y for points, y in zip(mesh_points.T, Y)}
+        ternary.heatmap(data, scale=100)
 
     def __str__(self):
         if not self._response_surface_coef:
@@ -128,10 +131,10 @@ class SimplexCentroid():
     def __repr__(self):
         return \
             '''
-Point:\t{}
-LowerBounds:\t{}
-UpperBounds:\t{}
-Response surface coef:\t{}
+            Point:\t{}
+            LowerBounds:\t{}
+            UpperBounds:\t{}
+            Response surface coef:\t{}
             '''.format(self.n_point,
                        self.lower_bounds,
                        self.upper_bounds,
