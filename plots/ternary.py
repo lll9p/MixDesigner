@@ -105,6 +105,7 @@ def plot_tri_contourf(distribute_func, n_levels=200, subdiv=8, **kwargs):
     ax = fig.add_subplot(111, aspect='equal')
     ax.triplot(triangle, color='black')
     trimap = ax.tricontourf(trimesh, pvals, n_levels, **kwargs)
+    # trimap = ax.tricontourf(x,y,t,n_levels,**kwargs)
     offset = 0.02
     linewidth = 1.
     for x, y, s in zip(*tick_txy('left'), tick_labels()):
