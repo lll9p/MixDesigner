@@ -46,7 +46,6 @@ def tick_txy(location, width=1.0, size=20):
             np.array((0.0, ) * (size + 1)), ))
         return xy[0, :], xy[1, :]
 
-
 '''
 http://stackoverflow.com/questions/29512046/how-to-create-ternary-contour-plot-in-python
 http://stackoverflow.com/questions/30967849/python-matplotlib-tick-marks-on-ternary-plot
