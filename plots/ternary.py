@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import numpy as np
+import math
 # import seaborn as sns
 # sns.set_context('notebook',)
 # sns.set(context='notebook',
@@ -18,6 +19,17 @@ triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
 # Mid-points of triangle sides opposite of each corner
 midpoints = [(corners[(i + 1) % 3] + corners[(i + 2) % 3]) / 2.0
              for i in range(3)]
+
+
+def shannon_entropy(p):
+    """Computes the Shannon Entropy at a distribution in the simplex."""
+    s = 0.
+    for i in range(len(p)):
+        try:
+            s += p[i] * math.log(p[i])
+        except ValueError:
+            continue
+    return -1. * s
 
 
 def xy2bc(xy, tol=1.e-3):
@@ -45,6 +57,7 @@ def tick_txy(location, width=1.0, size=20):
             np.arange(0, width / size * (size + 1), width / size),
             np.array((0.0, ) * (size + 1)), ))
         return xy[0, :], xy[1, :]
+
 
 '''
 http://stackoverflow.com/questions/29512046/how-to-create-ternary-contour-plot-in-python
