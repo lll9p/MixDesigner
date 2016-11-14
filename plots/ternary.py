@@ -33,7 +33,8 @@ def shannon_entropy(p):
 
 
 def xy2bc(xy, tol=1.e-3):
-    '''Converts 2D Cartesian coordinates to barycentric.'''
+    '''Converts 2D Cartesian coordinates to barycentric.
+    笛卡尔坐标转重心坐标'''
     s = [(corners[i] - midpoints[i]).dot(xy - midpoints[i]) / 0.75
          for i in range(3)]
     return np.clip(s, tol, 1.0 - tol)
