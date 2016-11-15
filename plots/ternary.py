@@ -37,7 +37,7 @@ def xy2bc(xy, tol=1.e-3):
     笛卡尔坐标转重心坐标'''
     s = [(corners[i] - midpoints[i]).dot(xy - midpoints[i]) / 0.75
          for i in range(3)]
-    return np.clip(s, tol, 1.0 - tol)
+    return np.clip(s, a_min=tol, a_max=1.0 - tol)
 
 
 def tick_txy(location, width=1.0, size=20):
