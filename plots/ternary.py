@@ -8,15 +8,18 @@ import numpy as np
 import math
 
 
-def shannon_entropy(p):
+def shannon_entropy(pp):
     """Computes the Shannon Entropy at a distribution in the simplex."""
-    s = 0.
-    for i in range(len(p)):
-        try:
-            s += p[i] * math.log(p[i])
-        except ValueError:
-            continue
-    return -1. * s
+    r = []
+    for p in pp:
+        s = 0.
+        for i in range(len(p)):
+            try:
+                s += p[i] * math.log(p[i])
+            except ValueError:
+                continue
+        r.append(-1. * s)
+    return r
 
 
 def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
@@ -35,8 +38,7 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     def xy2bc(xys, tol=1.e-3):
         '''
         Converts 2D Cartesian coordinates to barycentric.
-        according to https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Conversion_between_barycentric_and_Cartesian_coordinates
-        '''
+        according to https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Conversion_between_barycentric_and_Cartesian_coordinates'''
         xysT = np.transpose(xys)
         ones = [1] * len(xys)
         xysT1 = np.vstack((xysT, ones))
@@ -64,7 +66,8 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
 
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
-    pvals = [distribute_func(xy2bc(xy)) for xy in zip(trimesh.x, trimesh.y)]
+    bc = xy2bc(list(zip(trimesh.x, trimesh.y)))
+    pvals = distribute_func(bc)
     fig = plt.figure()
     ax = fig.add_subplot(111, aspect='equal')
     ax.triplot(triangle, color='black')
