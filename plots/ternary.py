@@ -23,8 +23,6 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])  # cos(30)
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
 # Mid-points of triangle sides opposite of each corner
-    midpoints = np.array([(corners[(i + 1) % 3] + corners[(i + 2) %
-                                                          3]) / 2.0 for i in range(3)])  # fontsize=20, **args
 
     def tick_labels(scale=100, size=20):
         return [
@@ -32,19 +30,17 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
             for i in np.arange(0, scale / size * (size + 1), scale / size)
         ]
 
-    def xy2bc(xy, tol=1.e-3):
-        '''Converts 2D Cartesian coordinates to barycentric.
-        笛卡尔坐标转重心坐标'''
-        s = [(corners[i] - midpoints[i]).dot(xy - midpoints[i]) / 0.75
-             for i in range(3)]
-        return np.clip(s, a_min=tol, a_max=1.0 - tol)
-
     RI = np.linalg.inv(np.vstack((corners.T, [1, 1, 1])))
 
-    def myxy2bc(xy, tol=1.e-3):
-        '''Converts 2D Cartesian coordinates to barycentric.
-        笛卡尔坐标转重心坐标'''
-        lambda_ = RI.dot(np.hstack((xy, 1)))
+    def xy2bc(xys, tol=1.e-3):
+        '''
+        Converts 2D Cartesian coordinates to barycentric.
+        according to https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Conversion_between_barycentric_and_Cartesian_coordinates
+        '''
+        xysT = np.transpose(xys)
+        ones = [1] * len(xys)
+        xysT1 = np.vstack((xysT, ones))
+        lambda_ = RI.dot(xysT1).T
         return np.clip(lambda_, a_min=tol, a_max=1.0 - tol)
 
     def tick_txy(location, width=1.0, size=20):
