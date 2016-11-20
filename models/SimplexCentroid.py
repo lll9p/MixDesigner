@@ -40,6 +40,12 @@ class SimplexCentroid():
         self._X = self._Z.dot(self._M.T)
         self._response_surface_coef = None
 
+    def X2Z(self, X):
+        return X.dot(self._M.T.I)
+
+    def Z2X(self, Z):
+        return Z.dot(self._M.T)
+
     def fit(self, y):
         '''
         generate the formula with specific y, y be experiment's results
