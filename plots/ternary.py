@@ -75,6 +75,22 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     # trimap = ax.tricontourf(x,y,t,n_levels,**kwargs)
     offset = 0.02
     linewidth = 1.
+    pramsdict = {'left': {'x': x - offset / 2,
+                          'y': y + 0.75**0.5 * offset,
+                          'v': 'center',
+                          'h': 'right',
+                          },
+                 'right': {'x': x + offset / 2,
+                           'y': y,
+                           'v': 'center',
+                           'h': 'left',
+                           },
+                 'bottom': {'x': x - offset / 2,
+                            'y': y - 0.75**0.5 * offset,
+                            'v': 'top',
+                            'h': 'center',
+                            },
+                 }
     for x, y, s in zip(*tick_txy('left'), tick_labels()):
         ax.text(
             x - offset / 2,
