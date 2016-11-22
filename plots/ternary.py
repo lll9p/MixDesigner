@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import numpy as np
 import math
+import matplotlib.lines as mlines
 
 
 def shannon_entropy(pp):
@@ -27,12 +28,6 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
 # Mid-points of triangle sides opposite of each corner
 
-    def tick_labels(scale=100, size=20):
-        return [
-            str(int(i))
-            for i in np.arange(0, scale / size * (size + 1), scale / size)
-        ]
-
     RI = np.linalg.inv(np.vstack((corners.T, [1, 1, 1])))
 
     def xy2bc(xys, tol=1.e-3):
@@ -44,6 +39,12 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
         xysT1 = np.vstack((xysT, ones))
         lambda_ = RI.dot(xysT1).T
         return np.clip(lambda_, a_min=tol, a_max=1.0 - tol)
+
+    def tick_labels(scale=100, size=20):
+        return [
+            str(int(i))
+            for i in np.arange(0, scale / size * (size + 1), scale / size)
+        ]
 
     def tick_txy(location, width=1.0, size=20):
         height = width * 0.75**0.5
@@ -75,22 +76,6 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     # trimap = ax.tricontourf(x,y,t,n_levels,**kwargs)
     offset = 0.02
     linewidth = 1.
-    pramsdict = {'left': {'x': x - offset / 2,
-                          'y': y + 0.75**0.5 * offset,
-                          'v': 'center',
-                          'h': 'right',
-                          },
-                 'right': {'x': x + offset / 2,
-                           'y': y,
-                           'v': 'center',
-                           'h': 'left',
-                           },
-                 'bottom': {'x': x - offset / 2,
-                            'y': y - 0.75**0.5 * offset,
-                            'v': 'top',
-                            'h': 'center',
-                            },
-                 }
     for x, y, s in zip(*tick_txy('left'), tick_labels()):
         ax.text(
             x - offset / 2,
@@ -123,6 +108,7 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
             '-',
             lw=linewidth,
             color='black')
+
     '''
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     divider = make_axes_locatable(plt.gca())
@@ -137,3 +123,37 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     # ax.set_ylim(-0.02, 0.75**0.5+0.02)
     ax.axis('off')
     return fig
+
+
+def pl(distribute_func, n_levels=200, subdiv=8, **kwargs):
+    corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])  # cos(30)
+    triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
+# Mid-points of triangle sides opposite of each corner
+
+    RI = np.linalg.inv(np.vstack((corners.T, [1, 1, 1])))
+
+    def xy2bc(xys, tol=1.e-3):
+        '''
+        Converts 2D Cartesian coordinates to barycentric.
+        according to https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Conversion_between_barycentric_and_Cartesian_coordinates'''
+        xysT = np.transpose(xys)
+        ones = [1] * len(xys)
+        xysT1 = np.vstack((xysT, ones))
+        lambda_ = RI.dot(xysT1).T
+        return np.clip(lambda_, a_min=tol, a_max=1.0 - tol)
+    refiner = tri.UniformTriRefiner(triangle)
+    trimesh = refiner.refine_triangulation(subdiv=subdiv)
+    bc = xy2bc(list(zip(trimesh.x, trimesh.y)))
+    pvals = distribute_func(bc)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, aspect='equal')
+    ax.triplot(triangle, color='black')
+    trimap = ax.tricontourf(trimesh, pvals, n_levels, **kwargs)
+    fig.colorbar(trimap)
+    ax.set_aspect('equal')
+    fig.tight_layout(pad=0)
+    ax.axis('equal')
+    # ax.set_xlim(0, 1)
+    # ax.set_ylim(-0.02, 0.75**0.5+0.02)
+    ax.axis('off')
+    return fig, ax
