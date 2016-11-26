@@ -150,7 +150,7 @@ def pl(distribute_func, n_levels=200, subdiv=8, **kwargs):
     ax.triplot(triangle, color='black')
     trimap = ax.tricontourf(trimesh, pvals, n_levels, **kwargs)
     fig.colorbar(trimap)
-    mlines.Line2D
+    mlines.Line2D([], [])
     ax.set_aspect('equal')
     fig.tight_layout(pad=0)
     ax.axis('equal')
