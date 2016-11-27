@@ -125,6 +125,17 @@ def plot_ternary(distribute_func, n_levels=200, subdiv=8, **kwargs):
     return fig
 
 
+def rotate(degree):
+    def degree2rad(degree):
+        return np.pi * degree / 180.0
+    rad = degree2rad(degree)
+    M = np.array([
+        [np.cos(rad), -np.sin(rad)],
+        [np.sin(rad), np.cos(rad)]
+    ])
+    return M
+
+
 def pl(distribute_func, n_levels=200, subdiv=8, **kwargs):
     corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])  # cos(30)
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
