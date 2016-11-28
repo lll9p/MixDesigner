@@ -152,6 +152,9 @@ def pl(distribute_func, n_levels=200, subdiv=8, **kwargs):
         xysT1 = np.vstack((xysT, ones))
         lambda_ = RI.dot(xysT1).T
         return np.clip(lambda_, a_min=tol, a_max=1.0 - tol)
+    def tickxy(location,scale):
+        pass
+
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
     bc = xy2bc(list(zip(trimesh.x, trimesh.y)))
