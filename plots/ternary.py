@@ -136,24 +136,27 @@ def rotate(degree):
     return M
 
 
-def pl(distribute_func, n_levels=200, subdiv=8, **kwargs):
+def pl(distribute_func, n_levels=200, subdiv=8, scale=[[0., 1.], [0., 1.], [0., 1.]]):
     corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])  # cos(30)
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
-# Mid-points of triangle sides opposite of each corner
 
     RI = np.linalg.inv(np.vstack((corners.T, [1, 1, 1])))
 
-    def xy2bc(xys, tol=1.e-3):
+    def xy2bc(xys, tol=1.e-4, RI=RI):
         '''
         Converts 2D Cartesian coordinates to barycentric.
-        according to https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Conversion_between_barycentric_and_Cartesian_coordinates'''
+        According to https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Conversion_between_barycentric_and_Cartesian_coordinates'''
         xysT = np.transpose(xys)
         ones = [1] * len(xys)
-        xysT1 = np.vstack((xysT, ones))
-        lambda_ = RI.dot(xysT1).T
+        xysT_ = np.vstack((xysT, ones))
+        lambda_ = RI.dot(xysT_).T
         return np.clip(lambda_, a_min=tol, a_max=1.0 - tol)
-    def tickxy(location,scale):
-        pass
+
+    def tickxy(location, scale=scale):
+        scale = np.array(scale)
+        if scale.shape != (3, 2):
+            raise "scale's shape {} is not right!".format(scale.shape)
+        sa, sb, sc = scale
 
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
@@ -162,7 +165,7 @@ def pl(distribute_func, n_levels=200, subdiv=8, **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111, aspect='equal')
     ax.triplot(triangle, color='black')
-    trimap = ax.tricontourf(trimesh, pvals, n_levels, **kwargs)
+    trimap = ax.tricontourf(trimesh, pvals, n_levels)
     fig.colorbar(trimap)
     mlines.Line2D([], [])
     ax.set_aspect('equal')
