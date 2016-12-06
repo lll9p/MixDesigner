@@ -152,11 +152,14 @@ def pl(distribute_func, n_levels=200, subdiv=8, scale=[[0., 1.], [0., 1.], [0., 
         lambda_ = RI.dot(xysT_).T
         return np.clip(lambda_, a_min=tol, a_max=1.0 - tol)
 
-    def tickxy(location, scale=scale):
+    def ticktext(scale=scale):
         scale = np.array(scale)
         if scale.shape != (3, 2):
             raise "scale's shape {} is not right!".format(scale.shape)
-        sa, sb, sc = scale
+        sa, sb, sc = scale  # scale a, b, and c.
+
+    def tickline(location):
+        pass
 
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
