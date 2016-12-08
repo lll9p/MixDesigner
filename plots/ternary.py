@@ -159,7 +159,7 @@ def pl(distribute_func, n_levels=200, subdiv=8, scale=[[0., 1.], [0., 1.], [0., 
         sa, sb, sc = scale  # scale a, b, and c.
 
     def tickline(location):
-        pass
+        np.arange(0,0.75**0.5)
 
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
