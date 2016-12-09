@@ -158,8 +158,14 @@ def pl(distribute_func, n_levels=200, subdiv=8, scale=[[0., 1.], [0., 1.], [0., 
             raise "scale's shape {} is not right!".format(scale.shape)
         sa, sb, sc = scale  # scale a, b, and c.
 
-    def tickline(location):
-        np.arange(0,0.75**0.5)
+    def ticklines(tickscale=[0, 0.75**0.5], split=10, line_height=0.1, clockwise=60):
+        scale_butt, scale_top = tickscale
+        step_y = (scale_top - scale_butt) / split
+        init_tick_location_y = np.arange(
+            scale_butt, scale_top + step, step)
+        step_x = (1. - 0.) / split
+        init_tick_location_x = init_tick_location_y / (3**0.5)
+        np.flipud(init_tick_location_x)
 
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
