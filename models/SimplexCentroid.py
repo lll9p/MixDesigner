@@ -3,7 +3,7 @@
 import numpy as np
 from itertools import combinations, chain
 import collections
-import ternary
+# import ternary
 
 
 class SimplexCentroid():
