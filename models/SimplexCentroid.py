@@ -2,7 +2,7 @@
 # coding: utf-8
 from decimal import Decimal
 from fractions import Fraction
-from itertools import chain, combinations
+from itertools import chain
 from logging import error
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
@@ -17,15 +17,17 @@ from .types import (BoundsType, ComponentNamesType, DefaultsType, PointsType,
 
 ModelType = TypeVar("ModelType", bound="SimplexCentroid")
 
+LIMIT_DENOMINATOR = 1000000
+
 
 def np_formatter_func(x: Any) -> str:
     if isinstance(x, Fraction):
-        return str(x.limit_denominator(1000000))
+        return str(x.limit_denominator(LIMIT_DENOMINATOR))
     else:
-        return f"{x:.2}"
+        return str(x)
 
 
-# np.set_printoptions(formatter={"all": np_formatter_func})
+np.set_printoptions(formatter={"all": np_formatter_func})
 
 
 class SimplexCentroid(BaseModel):
@@ -36,20 +38,7 @@ class SimplexCentroid(BaseModel):
     Convert proportion to projected space, fit the response surface coefficients.
     Experiments numbers equals to power(n_components,2)-1.
     Let n=n_components, en=2**n-1
-    Powerset mask is (Removed first empty subset.):
-    powerset_mask = []
-    for i in range(en):
-        powerset_mask.append(bin(i+1))
-    pp = []
-    ppt = []
-    for i in range(en):
-        tmp=format(i+1,"04b")
-        print(tmp)
-        ppt.append(tmp)
-        pp.append(list(map(lambda i:True if i=="1" else False,tmp)))
-    projected_matrix = np.ones((2**n-1,n))
-    pm=project_matrix
-    pmdone=(pm*pp)/pp.sum(axis=1)[:,np.newaxis]
+    Powerset mask is (Removed first empty subset.)
     """
 
     def __init__(self, defaults: Optional[DefaultsType] = None) -> None:
@@ -221,11 +210,14 @@ class SimplexCentroid(BaseModel):
     def _check_bounds(
         bounds: Optional[BoundsType], n_components: int, type_: str
     ) -> np.ndarray[Fraction, Any]:
+        make_fraction = lambda n: Fraction(str(n)).limit_denominator(
+            LIMIT_DENOMINATOR
+        )
         if bounds is None:
             bound = 0.0 if type_ == "lower" else 1.0
-            bounds = tuple((Fraction(str(bound)),) * n_components)
+            bounds = tuple((make_fraction(bound),) * n_components)
         else:
-            bounds = tuple(Fraction(str(n)) for n in bounds)
+            bounds = tuple(make_fraction(bound) for bound in bounds)
         return np.array(bounds)
 
     def _generate_proportion(self) -> PointsType:
@@ -234,42 +226,50 @@ class SimplexCentroid(BaseModel):
     def _generate_transform_matrix(self) -> np.ndarray[Fraction, Any]:
         # Get transform_matrix
         # Transform matrix
+        lower_bounds = self.lower_bounds
+        n = self.n_components
         # fmt: off
-        transform_matrix = self.lower_bounds\
-                .repeat(self.n_components)\
-                .reshape((self.n_components, self.n_components))\
-                + np.eye(self.n_components, dtype=Fraction)\
-                * (1 - self.lower_bounds.sum())
+        transform_matrix = lower_bounds\
+                .repeat(n)\
+                .reshape((n, n))\
+                + np.eye(n,dtype=Fraction)\
+                * (1 - lower_bounds.sum())
         # fmt: on
         return transform_matrix
 
     def _generate_project_matrix(self) -> PointsType:
-        # Encoded projected matrix
-        project_matrix = np.array(
-            [
-                [
-                    Fraction(1 / Fraction(len(p))) if i in p else Fraction(0)
-                    for i in range(self.n_components)
-                ]
-                for p in self.experiment_points
-            ]
+        """
+        Take from experiment_points and divide component counts.
+        """
+        n = self.n_components
+        experiment_points = self.experiment_points
+        project_matrix = self.ndarray_to_fraction_array(
+            np.ones((2**n - 1, n))
+            * experiment_points
+            / experiment_points.sum(axis=1)[:, np.newaxis]
         )
+
         return project_matrix
 
     def _generate_experiment_points(
         self,
-    ) -> Tuple[Tuple[int, Any], Any]:
+    ) -> np.ndarray:
         """
         test_points:refer to proportion test_points.need to convert to nature points.
         """
-        nums = range(self.n_components)
-        # Generate a powerset but void set
-        experiment_points = tuple(
-            chain.from_iterable(
-                map(lambda num: combinations(nums, num + 1), nums)
-            )
-        )
 
+        def bits(byte, n):
+            """
+            n-1 is total length of byte.
+            for example, n=4, n-1=3, so,
+            0b0001 -> 0001
+            if use n, 0b0001 -> 00001
+            """
+            return [(byte & 1 << i) >> i for i in range(n - 1, -1, -1)]
+
+        n = self.n_components
+        # Generate a powerset mask except void set by start range from 1.
+        experiment_points = np.array([bits(i, n=n) for i in range(1, 2**n)])
         return experiment_points
 
     def _generate_test_points(
@@ -306,9 +306,38 @@ class SimplexCentroid(BaseModel):
         ret = points @ inv_matrix
         return ret
 
+    def transform_variables(self, projected: np.ndarray):
+        """
+        Transform variable(x) to producted variables.
+        Theory:
+            A: the coefficients;
+            X: the variables;
+            then we got
+            y= a_1x_1 + a_2x_2 + ... a_nx_1x_2..x_n           (e.q-1)
+            X as variables is known; y as response value is known. We want to solve A.
+            We have to transform X to x_1,x_2,..,x_n,x_1x_2,..,x_1x_2..x_n form.
+            Just take x_n from experiment points(masks), then make a product.
+            We can get A by solve a linear equation.
+
+        Parameters
+        ----------
+        projected: np.ndarray
+
+        Returns
+        -------
+        Producted X matrix
+        """
+        # Numpy use bool array as mask
+        points = self.experiment_points.astype(bool)
+        transpose = projected.T
+        return np.array([transpose[point].prod(axis=0) for point in points]).T
+
     @staticmethod
     def ndarray_to_fraction_array(arr: PointsType) -> PointsType:
-        return np.vectorize(lambda x: Fraction(Decimal(str(x))))(arr)
+        number_to_fraction = lambda x: Fraction(
+            Decimal(str(x))
+        ).limit_denominator(LIMIT_DENOMINATOR)
+        return np.vectorize(number_to_fraction)(arr)
 
     def fit(self, y):
         """
@@ -335,16 +364,11 @@ class SimplexCentroid(BaseModel):
                 "Missing required positional argument: "
                 "y's length not match test_points"
             )
-        ZZ = np.array(
-            [
-                self.projected_matrix.take(test_point_pos, axis=1).prod(axis=1)
-                for test_point_pos in self.experiment_points
-            ]
-        ).T
         # Response surface coefs
-        return np.linalg.solve(ZZ.astype(np.float64), y)
+        X = self.transform_variables(self.projected_matrix).astype(np.float64)
+        return np.linalg.solve(X, y)
 
-    def fit_all(self) -> Self:
+    def fit_targets(self) -> Self:
         """
         Average target values by target names. Then fit them.
 
@@ -358,16 +382,15 @@ class SimplexCentroid(BaseModel):
         """
         # Average target values.
         values = np.array(self.target_values)
+        values_len = values.shape[0]
+        n = self.n_components
+        target_names = self.target_names
+        # Group mean.
         averaged = np.array(
-            [
-                values[i : i + self.n_experiments].T.mean(axis=1)
-                for i in range(0, values.shape[0], self.n_experiments)
-            ]
+            [values[i : i + n].T.mean(axis=1) for i in range(0, values_len, n)]
         )
         y = averaged[:, : len(self.experiment_points)]
-        coefs = {
-            name: self.fit(y[i]) for i, name in enumerate(self.target_names)
-        }
+        coefs = {name: self.fit(y[i]) for i, name in enumerate(target_names)}
         self._response_surface_coefs = coefs
         return self
 
@@ -380,48 +403,18 @@ class SimplexCentroid(BaseModel):
         coef = self._response_surface_coefs[target_name]
         # Convert proportion to projected space.
         projected_proportion = self.transform_reverse(proportion)
-        # from each projected proportion, take the points and make a prod,
-        # then multiply coef and then sums up
-        prediction = coef @ [
-            projected_proportion.take(test_point_pos, axis=1).prod(axis=1)
-            for test_point_pos in self.experiment_points
-        ]
-
+        prediction = self.transform_variables(projected_proportion) @ coef
         return prediction
 
-    # def predict(self, X):
-    #     """
-    #     X is array of arrays, x is the read value, not code value
-    #     @useage:
-    #     model.predict(X)
-    #     """
-    #     notarray = any(map(lambda x: not isinstance(x, (Sequence, np.ndarray)), X))
-    #     shape = (1 if notarray else len(X), self.n_points)
-    #     try:
-    #         X = np.reshape(X, shape)
-    #         if X.ndim != 2:
-    #             raise TypeError("X is not a valid array-like object!")
-    #         if X.shape != shape:
-    #             raise TypeError(
-    #                 "Missing required positional argument: \
-    #                 x's length not match test_points"
-    #             )
-    #         if X.dtype != np.float64:
-    #             raise TypeError(
-    #                 "DataType of element(s) of X is wrong! Please check again."
-    #             )
-    #     except:
-    #         raise TypeError("DataType of element(s) of X is wrong! Please check again.")
-    #     XX = X.dot(np.linalg.inv(self.transform_matrix.T))
-    #     # from each XX, take the points and make a prod,
-    #     # then multiply coef and then sums up
-    #     prediction = self._response_surface_coef.dot(
-    #         [
-    #             XX.take(test_point_pos, axis=1).prod(axis=1)
-    #             for test_point_pos in self.experiment_points
-    #         ]
-    #     )
-    #     return prediction
+    def predict_targets(self) -> Optional[Dict[str, np.ndarray]]:
+        if self._response_surface_coefs is None:
+            print("Not fit yet.")
+            return
+        proportion = np.vstack([self.proportion, self.proportion_test])
+        predictions = dict()
+        for target_name in self.target_names:
+            predictions[target_name] = self.predict(proportion, target_name)
+        return predictions
 
     # def score(self, X, y):
     #     return np.sum(np.abs(self.predict(X) - y)) / len(y)
