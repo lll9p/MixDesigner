@@ -1,17 +1,34 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# import numpy as np
-from sklearn import linear_model, preprocessing
+# coding: utf-8
 
-X = []  # get the xes
-y = []  # get the ys
 
-polynomial = preprocessing.PolynomialFeatures(
-    degree=3, include_bias=False, interaction_only=True)
+class BaseModel:
+    """Base class for all estimators in MixDesiner.
+    Notes
+    -----
+    All estimators should reimplement methods.
+    """
 
-X_ = polynomial.fit_transform(X)
+    def __init__(self, name: str):
+        """
+        Initial parameters for this estimator.
+        Parameters
+        ----------
+        deep : bool, default=True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+        self.name = name
 
-model = linear_model.LinearRegression(fit_intercept=False)
-model.fit(X_, y)
+    def fit(self):
+        pass
 
-model.coef_
+    def predict(self):
+        pass
+
+    def transform(self):
+        pass

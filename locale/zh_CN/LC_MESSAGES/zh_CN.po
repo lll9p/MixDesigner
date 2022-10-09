@@ -1,0 +1,160 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-09-27 21:41+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: cli.py:23
+msgid "Split args."
+msgstr ""
+
+#: cli.py:36
+msgid "Tell me each component name.\n"
+msgstr ""
+
+#: cli.py:38
+msgid "Input no components name, please retry."
+msgstr ""
+
+#: cli.py:43
+msgid "At least 3 components, please retry."
+msgstr ""
+
+#: cli.py:51
+msgid "Type **lower** bounds, "
+msgstr ""
+
+#: cli.py:51
+msgid "Type **upper** bounds, "
+msgstr ""
+
+#: cli.py:54
+msgid "like 'a b c' if you have 3 components.\n"
+msgstr ""
+
+#: cli.py:55
+msgid "If you leave it blank they would be all '0'(lower) or '1'(upper).\n"
+msgstr ""
+
+#: cli.py:64
+msgid "Input is out of bounds! Bounds must be in (0~1), please retry."
+msgstr ""
+
+#: cli.py:67
+msgid "Bounds must match components' shape, please retry."
+msgstr ""
+
+#: cli.py:75
+msgid ""
+"Input test points, like 'a b c|d e f' or integer. Leave blank will choose 3 "
+"points automatically.\n"
+msgstr ""
+
+#: cli.py:92
+msgid "Welcome to MixDesiner! To get help press '?' or type 'help'."
+msgstr ""
+
+#: cli.py:95
+msgid "Documented commands. type 'help command' to get hint."
+msgstr ""
+
+#: cli.py:96
+msgid "misc_header"
+msgstr ""
+
+#: cli.py:97
+msgid "Undocumented commands."
+msgstr ""
+
+#: cli.py:110
+msgid "Build a model."
+msgstr ""
+
+#: cli.py:113
+msgid "Model name must be string."
+msgstr ""
+
+#: cli.py:118
+msgid "You must choose model name in exist models. Type 'ls' to show models."
+msgstr ""
+
+#: cli.py:138
+msgid "Parameters are:"
+msgstr ""
+
+#: cli.py:139
+msgid "Components names:"
+msgstr ""
+
+#: cli.py:140
+msgid "Count of components:"
+msgstr ""
+
+#: cli.py:141
+msgid "Lower bounds:"
+msgstr ""
+
+#: cli.py:142
+msgid "Upper bounds:"
+msgstr ""
+
+#: cli.py:143
+msgid "Test points:"
+msgstr ""
+
+#: cli.py:144
+msgid "Press enter to confirm. Type 'r' to return/cancel.\n"
+msgstr ""
+
+#: cli.py:153
+msgid "Model built successfully."
+msgstr ""
+
+#: cli.py:155
+msgid "Save model parameters to an excel workbook."
+msgstr ""
+
+#: cli.py:158
+msgid "Please input filename like 'yourfile.xlsx'."
+msgstr ""
+
+#: cli.py:165
+msgid "Enter default model builder: SimplexCentroid."
+msgstr ""
+
+#: cli.py:168
+msgid "Export current model to word document."
+msgstr ""
+
+#: cli.py:172
+msgid "Analyze current model."
+msgstr ""
+
+#: cli.py:177
+msgid "Find optimal point."
+msgstr ""
+
+#: cli.py:181
+msgid "Show current model."
+msgstr ""
+
+#: cli.py:186
+msgid "Show available models."
+msgstr ""
+
+#: cli.py:190
+msgid "Exit the program."
+msgstr ""

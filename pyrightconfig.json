@@ -1,0 +1,19 @@
+{
+  "include": [
+    ".",
+    "models",
+    "utils"
+  ],
+  "exclude": [
+    "**/__pycache__"
+  ],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "pythonVersion": "3.10",
+      "pythonPlatform": "Windows"
+    }
+  ],
+  "venvPath": "C:/Users/lll9p/AppData/Local/Programs/virtualenvs",
+  "venv": "venv310"
+}

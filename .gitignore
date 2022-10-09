@@ -63,3 +63,5 @@ target/
 
 # vim swap file
 *.swp
+models/SimplexCentroid_old.py
+old/
