@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
-# import cmd
 import gettext
 import inspect
 import locale
+import pathlib
+from collections import OrderedDict
+from itertools import chain
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 import openpyxl
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import PathCompleter, WordCompleter
 
 import models
 from models.types import ComponentNamesType, TargetNamesType, TestPointType
-from utils import Completer
+from utils import Completer, print_table, revert_excel_array_attr_text
 
 _ = gettext.gettext
 try:
@@ -259,8 +262,24 @@ class CLI:
                 data[name] = WordCompleter(
                     words=list(self.models.keys()), ignore_case=True
                 )
-            elif name == ("save", "export", "load"):
+            elif name in ("save", "export", "load"):
                 data[name] = PathCompleter(expanduser=True)
+            elif name in ("print",):
+                data[name] = WordCompleter(
+                    words=list(
+                        set(
+                            chain.from_iterable(
+                                model.parameters
+                                for model in self.models.values()
+                            )
+                        )
+                    ),
+                    ignore_case=True,
+                )
+            elif name == "help":
+                data[name] = WordCompleter(
+                    words=list(self.cmds.keys()), ignore_case=True
+                )
             else:
                 data[name] = None
         completer = Completer.from_nested_dict(data)
@@ -340,9 +359,11 @@ class CLI:
         else:
             info(_("You must provide a filename."))
             return
-        if self.model is not None:
-            self.model.save_to_file(file)
-            info(_("File saved."))
+        if self.model is None:
+            info(_("Model not build. Please build a model."))
+            return
+        self.model.save_to_file(file)
+        info(_("File saved."))
 
     @docstring(_("Load model parameters from an excel workbook."))
     def do_load(self, args: List[str] | None = None):
@@ -353,10 +374,13 @@ class CLI:
         else:
             info(_("You must provide a filename."))
             return
+        if not pathlib.Path(file).exists():
+            info(_("File not exists."))
+            return
         workbook = openpyxl.load_workbook(file, read_only=True)
-        sheet_conditions = workbook["Conditions"]
-        model_name = sheet_conditions[1][1].value
-        # Need Check valid.
+        model_name = revert_excel_array_attr_text(
+            workbook.defined_names["model_name"].attr_text
+        )[0][0]
         self.model = self.models[model_name].build_from_file(file)
         info(_("File loaded. Use print to check."))
 
@@ -376,6 +400,45 @@ class CLI:
         ignore(args)
         pass
 
+    @docstring(
+        _("Predict samples. Use ` `(space) to separate each samples.\n")
+        + _(
+            "For example:predict 0.12,0.12,0.33,0.43 0.078,0.12,0.204,0.598 0.03,0.222,0.06,0.688"
+        )
+    )
+    def do_predict(self, args: List[str] | None = None):
+        # For single sample prediction.
+        # predict 0.12,0.12,0.33,0.43 0.078,0.12,0.204,0.598 0.03,0.222,0.06,0.688
+        if args is None:
+            return
+        if self.model is None:
+            print(_("No model built. Please build a model first."))
+            return
+        try:
+
+            samples = [
+                [float(number) for number in sample.split(",")]
+                for sample in args
+            ]
+            samples = np.array(samples)
+            if samples.shape[1] != self.model.n_components:
+                print(_("Your sample proportion count is invalid."))
+                return
+        except:
+            print(_("Your sample proportion is invald."))
+            return
+        if self.model._response_surface_coefs is None:
+            self.model.fit_targets()
+        predictions = self.model.predict_samples(samples)
+        if not predictions:
+            return
+        table = OrderedDict()
+        for name, sample in zip(self.model.component_names, samples.T):
+            table[name] = sample.tolist()
+        for target, value in predictions.items():
+            table[target] = value.tolist()
+        print_table(table)
+
     @docstring(_("Find optimal point."))
     def do_find(self, args: List[str] | None = None):
         ignore(args)
@@ -386,11 +449,11 @@ class CLI:
     @docstring(_("Show current model."))
     def do_print(self, params: List[str] | None = None):
         if self.model is not None:
-            if (params is None) or params == [""]:
-                print(self.model.__repr__())
-            elif len(params) > 1:
+            if (params is None) or params == []:
+                print(self.model.get_params())
+            elif len(params) >= 1:
                 for arg in params:
-                    print(self.model.__repr__(param=arg))
+                    print(self.model.get_params(param=arg))
         else:
             info(_("Model not build. Please build a model."))
 
@@ -398,6 +461,10 @@ class CLI:
     def do_ls(self, args: List[str] | None = None):
         ignore(args)
         info(" ".join(self.models.keys()))
+
+    @docstring(_("Clear screen."))
+    def do_clear(self, args: List[str] | None = None):
+        ignore(args)
 
     @docstring(_("Exit the program."))
     def do_quit(self, args: List[str] | None = None):

@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
+from collections import OrderedDict
 from decimal import Decimal
 from fractions import Fraction
-from itertools import chain
-from logging import error
+from itertools import chain, zip_longest
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 import openpyxl
 import openpyxl.styles
+import openpyxl.utils
+import openpyxl.workbook.defined_name
+from openpyxl.worksheet.table import Table, TableColumn, TableFormula
 from typing_extensions import Self
+
+from utils import convert_excel_array_attr_text, revert_excel_array_attr_text
 
 from .BaseModel import BaseModel
 from .types import (BoundsType, ComponentNamesType, DefaultsType, PointsType,
@@ -40,6 +45,22 @@ class SimplexCentroid(BaseModel):
     Let n=n_components, en=2**n-1
     Powerset mask is (Removed first empty subset.)
     """
+
+    name = "SimplexCentroid"
+    parameters = [
+        "name",
+        "n_components",
+        "component_names",
+        "lower_bounds",
+        "upper_bounds",
+        "target_names",
+        "n_experiments",
+        "transform_matrix",
+        "projected_matrix",
+        "projected_matrix_test",
+        "proportion",
+        "proportion_test",
+    ]
 
     def __init__(self, defaults: Optional[DefaultsType] = None) -> None:
         """
@@ -115,7 +136,8 @@ class SimplexCentroid(BaseModel):
             if names is None:
                 # None of n_components and names provided. Choose defaults.
                 print(
-                    "Number of components and component names not found. Choose defaults automatically (3)."
+                    "Number of components and component names not found. "
+                    "Choose defaults automatically (3)."
                 )
                 self.with_n_components(3).with_component_names()
             else:
@@ -165,7 +187,7 @@ class SimplexCentroid(BaseModel):
         return self
 
     def with_target_values(
-        self, values: Optional[List[Tuple[Tuple[float]]]] = None
+        self, values: Optional[Iterable[Iterable[float]]] = None
     ) -> Self:
         if values is None:
             self.target_values = None
@@ -248,7 +270,6 @@ class SimplexCentroid(BaseModel):
             * experiment_points
             / experiment_points.sum(axis=1)[:, np.newaxis]
         )
-
         return project_matrix
 
     def _generate_experiment_points(
@@ -280,11 +301,13 @@ class SimplexCentroid(BaseModel):
             added_points = np.random.dirichlet(
                 (1,) * self.n_components, size=test_points
             )
-        elif isinstance(test_points, List | Tuple):
+        elif isinstance(test_points, List | Tuple | np.ndarray):
             # if nested
             added_points = np.array(test_points)
             # if not nested
-            if not all(isinstance(i, List | Tuple) for i in test_points):
+            if not all(
+                isinstance(i, List | Tuple | np.ndarray) for i in test_points
+            ):
                 # expand one dim
                 added_points = np.expand_dims(added_points, axis=0)
             added_points = self.transform_reverse(added_points)
@@ -343,21 +366,6 @@ class SimplexCentroid(BaseModel):
         """
         generate the formula with specific y, y be experiment's results
         assume y's order same as model.test_points
-        @useage:
-        model.fit(y)
-        # coefficients of response surface
-        # _response_surface_coef = []
-        # for i, test_point in enumerate(self.test_points):
-        #    r = len(test_point)
-        #    temp = 0
-        #    for j in range(1, r + 1):
-        #        for test_point_pos in combinations(test_point, j):
-        #            t = len(test_point_pos)
-        #            # From 关颖男's 《混料试验设计》 Page:64
-        #            temp += y[self.test_points.index(test_point_pos)] * \
-        #                r * (-1)**(r - t) * t**(r - 1)
-        #    _response_surface_coef.append(temp)
-        # self._response_surface_coef = np.array(_response_surface_coef)
         """
         if len(y) != len(self.experiment_points):
             raise TypeError(
@@ -381,9 +389,12 @@ class SimplexCentroid(BaseModel):
         None
         """
         # Average target values.
+        if self.target_values is None:
+            print("No target values set.")
+            return self
         values = np.array(self.target_values)
         values_len = values.shape[0]
-        n = self.n_components
+        n = self.n_experiments
         target_names = self.target_names
         # Group mean.
         averaged = np.array(
@@ -416,180 +427,61 @@ class SimplexCentroid(BaseModel):
             predictions[target_name] = self.predict(proportion, target_name)
         return predictions
 
-    # def score(self, X, y):
-    #     return np.sum(np.abs(self.predict(X) - y)) / len(y)
-    #
-    # def __str__(self):
-    #     if self._response_surface_coef is None:
-    #         model_str = ""
-    #     else:
-    #         # ugly code NEED reform
-    #         model_str = ("{:+.2f}*{}" * len(self.experiment_points)).format(
-    #             *chain.from_iterable(
-    #                 zip(
-    #                     self._response_surface_coef,
-    #                     [
-    #                         ("z_{}*" * len(test_point)).format(*map(str, test_point))[
-    #                             :-1
-    #                         ]
-    #                         for test_point in self.experiment_points
-    #                     ],
-    #                 )
-    #             )
-    #         )
-    #     return model_str
+    def predict_samples(
+        self, proportion: np.ndarray
+    ) -> Optional[Dict[str, np.ndarray]]:
+        if self._response_surface_coefs is None:
+            print("Not fit yet.")
+            return
+        predictions = dict()
+        for target_name in self.target_names:
+            predictions[target_name] = self.predict(proportion, target_name)
+        return predictions
+
     def save_to_file(self, file: str) -> None:
         workbook = openpyxl.Workbook()
-        sheet_conditions = workbook.create_sheet(title="Conditions")
-        sheet_experiments = workbook.create_sheet(title="Experiments")
-        conditions_sheet_row_names = [
-            "Model",
-            "Names",
-            "Lower bounds",
-            "Upper_bounds",
-            "Experiments numbers",
-        ]
-        for i, name in enumerate(conditions_sheet_row_names, start=1):
-            sheet_conditions.cell(row=i, column=1, value=name)
-        cell = sheet_conditions.cell(row=1, column=2, value=self.name)
-        cell.number_format = openpyxl.styles.numbers.FORMAT_TEXT
-        for i, point_name in enumerate(self.component_names, start=2):
-            sheet_conditions.cell(row=2, column=i, value=point_name)
-        for i, bound in enumerate(self.lower_bounds, start=2):
-            cell = sheet_conditions.cell(row=3, column=i, value=str(bound))
-            cell.number_format = openpyxl.styles.numbers.FORMAT_TEXT
-        for i, bound in enumerate(self.upper_bounds, start=2):
-            cell = sheet_conditions.cell(row=4, column=i, value=str(bound))
-            cell.number_format = openpyxl.styles.numbers.FORMAT_TEXT
-        cell = sheet_conditions.cell(row=5, column=2, value=self.n_experiments)
-        cell.number_format = openpyxl.styles.numbers.FORMAT_NUMBER
-        # proportion+proportion_test
-        sheet_experiments.append(["№"] + self.component_names)
-        experiment_ids = [
-            "EXP-" + "".join(str(s) for s in p) for p in self.experiment_points
-        ]
-        experiment_ids = experiment_ids + [
-            f"TEST-{i}"
-            for i in range(
-                self.proportion.shape[0] + self.proportion_test.shape[0]
-            )
-        ]
-        for index, (experiment_id, line) in enumerate(
-            zip(experiment_ids, chain(self.proportion, self.proportion_test)),
-            start=1,
-        ):
-            row_index = index + 1
-            # № row
-            cell = sheet_experiments.cell(
-                row=row_index, column=1, value=experiment_id
-            )
-            cell.number_format = openpyxl.styles.numbers.FORMAT_TEXT
-            for line_index, number in enumerate(line, start=2):
-                cell = sheet_experiments.cell(
-                    row=row_index, column=line_index, value=float(number)
-                )
-                cell.number_format = openpyxl.styles.numbers.FORMAT_NUMBER_00
-        target_col_start = 1 + self.n_components
-        target_names_mix_with_n_experiments = []
-        for target in self.target_names:
-            for i in range(self.n_experiments):
-                target_names_mix_with_n_experiments.append(target)
-        for i, target in enumerate(
-            target_names_mix_with_n_experiments, start=1
-        ):
-            col_index = target_col_start + i
-            sheet_experiments.cell(row=1, column=col_index, value=target)
-            if self.target_values is not None:
-                for row_index, target_value in enumerate(
-                    self.target_values[i - 1], start=2
-                ):
-                    sheet_experiments.cell(
-                        row=row_index, column=col_index, value=target_value
-                    )
+        # Writting conditions.
+        make_sheet_conditions(workbook=workbook, model=self)
+        # Writting experiments
+        make_sheet_experiments(workbook=workbook, model=self)
+        # Writting coefficients
+        make_sheet_coefficients(workbook=workbook, model=self)
+        # Writting calculations.
+        make_sheet_calculations(workbook=workbook, model=self)
         # Remove default sheet
         if "Sheet" in workbook.sheetnames:
             workbook.remove_sheet(workbook["Sheet"])
         try:
             workbook.save(file)
             workbook.close()
-        except error as e:
+        except Exception as e:
             print(e)
 
     @classmethod
     def build_from_file(cls: Type[ModelType], file: str) -> Optional[ModelType]:
         """
-        n_components: int | None = 3,
-        component_names: Optional[ComponentNamesType] = None,
-        lower_bounds: Optional[BoundsType] = None,
-        upper_bounds: Optional[BoundsType] = None,
-        test_points: Optional[TestPointType] = None,
-        target_names: Optional[TargetNamesType] = None,
-        experiment_num: Optional[int] = None,"""
-        from openpyxl.cell.read_only import EmptyCell, ReadOnlyCell
-
-        def get_cells_values(
-            range: Iterable[ReadOnlyCell | EmptyCell],
-        ) -> List[str]:
-            return list(filter(lambda v: v, [cell.value for cell in range]))
-
+        Build model from exsit excel file.
+        """
         workbook = openpyxl.load_workbook(file, read_only=True, data_only=True)
-        sheet_conditions = workbook["Conditions"]
-        sheet_experiments = workbook["Experiments"]
-        # Row 1 is for model name.
-        component_names = get_cells_values(sheet_conditions[2][1:])
-        n_components = len(component_names)
-        lower_bounds = get_cells_values(sheet_conditions[3][1:])
-        upper_bounds = get_cells_values(sheet_conditions[4][1:])
-        n_experiments = get_cells_values(sheet_conditions[5][1:])
-        if len(n_experiments) == 1:
-            try:
-                n_experiments = int(n_experiments[0])
-            except:
-                print("The Excel file is invalid.")
-                print("Experiments numbers not right.")
-                return
-        else:
-            print("The Excel file is invalid.")
-            print("Experiments numbers not right.")
+        # Get conditions from workbook defined names.
+        (
+            model_name,
+            component_names,
+            n_components,
+            lower_bounds,
+            upper_bounds,
+            n_experiments,
+        ) = read_conditions(workbook=workbook)
+        if model_name != cls.name:
+            print(
+                f"Your excel file seems not for model:{cls.name}. Model name in excel file is {model_name}."
+            )
             return
-        # Get target names and target test values.
-        target_col_start = 1 + n_components
-        target_names = []
-        for target_cell in sheet_experiments[1][target_col_start:]:
-            value = target_cell.value
-            if value not in target_names:
-                target_names.append(value)
-        # Locate and load test points.
-        row_As = []
-        experiment_num = 0
-        target_values = []
-        for i, row in enumerate(sheet_experiments.iter_rows(), start=1):
-            value = row[0].value
-            if value == "№":
-                continue
-            if not value.startswith("EXP-") and not value.startswith("TEST-"):
-                break
-            if value.startswith("TEST-"):
-                row_As.append(i)
-            # Find target values.
-            target_values.append(
-                [float(cell.value) for cell in row[target_col_start:]]
-            )
-            experiment_num += 1
-        # Transpose
-        target_values = list(zip(*target_values))
-        # Split into target names.
-        # From Python documentation itertools -> grouper
-        # target_values = list(
-        #     zip(*([iter(target_values)] * n_experiments), strict=True)
-        # )
-        test_points = []
-        for row_index in row_As:
-            test_point = get_cells_values(
-                sheet_experiments[row_index][1 : n_components + 1]
-            )
-            test_points.append(test_point)
-
+        target_names, target_values, test_points = read_experiments(
+            workbook=workbook,
+            n_components=n_components,
+            n_experiments=n_experiments,
+        )
         workbook.close()
         model = (
             cls.build()
@@ -605,7 +497,7 @@ class SimplexCentroid(BaseModel):
         )
         return model
 
-    def __repr__(self, param: Optional[str] = None):
+    def get_params(self, param: Optional[str] = None):
         def get(obj: str) -> Any:
             if hasattr(self, obj):
                 return getattr(self, obj)
@@ -630,3 +522,295 @@ ProjectedMatrixTest:\n{get("projected_matrix_test")}\n
 Proportion:\n{get("proportion")}\n
 ProportionTest:\n{get("proportion_test")}
 """
+
+
+def make_sheet_conditions(workbook: openpyxl.Workbook, model: SimplexCentroid):
+    """
+    Make 'Conditions' sheet.
+    """
+
+    def make_defined_array(
+        name: str, source: List[List[str]], workbook: openpyxl.Workbook
+    ):
+        attr_text = convert_excel_array_attr_text(source)
+        defined_name = openpyxl.workbook.defined_name.DefinedName
+        defined_array = defined_name(name=name, attr_text=attr_text)
+        workbook.defined_names.append(defined_array)
+
+    sheet = workbook.create_sheet("Conditions")
+    # name arr expand
+    arrays = (
+        ("model_name", [[model.name]], 1),
+        (
+            "component_names",
+            [model.component_names],
+            len(model.component_names),
+        ),
+        (
+            "lower_bounds",
+            [model.lower_bounds.astype("str").tolist()],
+            model.lower_bounds.shape[0],
+        ),
+        (
+            "upper_bounds",
+            [model.upper_bounds.astype("str").tolist()],
+            model.upper_bounds.shape[0],
+        ),
+        ("n_experiments", [[str(model.n_experiments)]], 1),
+    )
+    for i, (name, arr, expand) in enumerate(arrays):
+        make_defined_array(name, arr, workbook)
+        func = openpyxl.utils.get_column_letter
+        start_letter = func(1 + 1)
+        end_letter = func(expand + 1)
+        coord = f"{start_letter}{i+1}"
+        coord_range = f"{coord}:{end_letter}{i+1}"
+        sheet.formula_attributes[coord] = dict(t="array", ref=coord_range)
+    data = [
+        ["Model", "=model_name"],
+        ["Names", "=component_names"],
+        ["Lower bounds", "=lower_bounds"],
+        ["Upper bounds", "=upper_bounds"],
+        ["Experiments numbers", "=n_experiments"],
+    ]
+    for line in data:
+        sheet.append(line)
+
+
+def make_sheet_experiments(workbook: openpyxl.Workbook, model: SimplexCentroid):
+    """
+    Make 'Experiments' sheet.
+    """
+    sheet = workbook.create_sheet("Experiments")
+    # Writting header
+    header = (
+        ["№"]
+        + model.component_names
+        + list(
+            chain.from_iterable(
+                ([name] * model.n_experiments for name in model.target_names)
+            )
+        )
+    )
+    sheet.append(header)
+    # Proportion with test points.
+    proportion = np.vstack((model.proportion, model.proportion_test))
+    if model.target_values is not None:
+        target_values = model.target_values
+    else:
+        target_values = (
+            [[None] * proportion.shape[0]]
+            * len(model.target_names)
+            * model.n_experiments
+        )
+    lines = (
+        np.hstack((proportion, np.array(target_values).T))
+        .astype(np.float64)
+        .tolist()
+    )
+    test_id = 0
+    for line, point in zip_longest(lines, model.experiment_points.tolist()):
+        if point is None:
+            exp_id = f"TEST-{test_id}"
+            test_id += 1
+        else:
+            exp_id = "EXP-" + "".join(str(s) for s in point)
+        sheet.append([exp_id] + line)
+
+
+def make_sheet_coefficients(
+    workbook: openpyxl.Workbook, model: SimplexCentroid
+):
+    """
+    Make 'Coefficients' sheet.
+    """
+    sheet = workbook.create_sheet("Coefficients")
+    # Save coefs
+    if model.target_values is not None:
+        model.fit_targets()
+    target_names_array = np.array(model.component_names)
+    variables = [
+        "*".join(target_names_array[ei])
+        for ei in model.experiment_points.astype(bool)
+    ]
+
+    coefs_with_header = [["Variables"] + variables]
+    for name in model.target_names:
+        if model._response_surface_coefs is not None:
+            coef = model._response_surface_coefs.get(name)
+            if isinstance(coef, np.ndarray):
+                coef = coef.tolist()
+            else:
+                coef = []
+        else:
+            coef = []
+        coefs = [name] + coef
+        coefs_with_header.append(coefs)
+    # Writting
+    for coef in zip(*coefs_with_header):
+        sheet.append(coef)
+
+    # Make a table for coefficients.
+    table_columns = []
+    for i, col in enumerate(coefs_with_header, start=1):
+        table_columns.append(TableColumn(id=i, name=col[0]))
+    col_name = openpyxl.utils.get_column_letter(len(coefs_with_header))
+    tab = Table(
+        displayName="Coefficients",
+        ref=f"A1:{col_name}{len(coefs_with_header[0])}",
+    )
+    sheet.add_table(tab)
+
+
+def make_sheet_calculations(
+    workbook: openpyxl.Workbook, model: SimplexCentroid
+):
+    """
+    Make 'Calculations' sheet.
+    """
+    sheet_calc = workbook.create_sheet("Calculations")
+    # Create calculation table data.
+    target_names_array = np.array(model.component_names)
+    variables = [
+        "*".join(target_names_array[ei])
+        for ei in model.experiment_points.astype(bool)
+    ]
+    table_header = (
+        model.component_names  # Components
+        + model.target_names  # Targets
+        + [name + "_" for name in model.component_names]  # Projected components
+        + ["(" + variable + ")" for variable in variables]
+    )
+    sheet_calc.append(table_header)
+    # Add transform matrix to defined_array
+    transform_matrix = convert_excel_array_attr_text(
+        model.transform_matrix.astype(np.float64).astype(str).tolist(),
+        number=True,
+    )
+    defined_name = openpyxl.workbook.defined_name.DefinedName
+    defined_array = defined_name(
+        name="transform_matrix", attr_text=transform_matrix
+    )
+    workbook.defined_names.append(defined_array)
+
+    target_value_format_string = (
+        "=SUM(TRANSPOSE(Coefficients[{}])*Calculations[[#This Row],[{}]:[{}]])"
+    )
+    target_values_formulaes = []
+    for target_name in model.target_names:
+        formulaes = target_value_format_string.format(
+            target_name, f"({variables[0]})", f"({variables[-1]})"
+        )
+        target_values_formulaes.append(formulaes)
+    projected_format_string = "=INDEX(MMULT(Calculations[[#This Row],[{}]:[{}]],MINVERSE(TRANSPOSE({}))),{})"
+    projected_formulaes = []
+    for i in range(1, model.n_components + 1):
+        formulaes = projected_format_string.format(
+            model.component_names[0],
+            model.component_names[-1],
+            "transform_matrix",
+            i,
+        )
+        projected_formulaes.append(formulaes)
+    variables_formulaes = []
+    for ei in model.experiment_points.astype(bool):
+        arr = target_names_array[ei]
+        v = "=" + "*".join([f"[[#This Row],[{s}_]]" for s in arr])
+        variables_formulaes.append(v)
+    table_col_formulaes = (
+        target_values_formulaes + projected_formulaes + variables_formulaes
+    )
+    proportion = np.vstack((model.proportion, model.proportion_test))
+    for line in proportion.astype(np.float64).tolist():
+        sheet_calc.append(line + table_col_formulaes)
+    table_data_cols = (
+        model.proportion.shape[1]
+        + len(target_values_formulaes)
+        + len(projected_formulaes)
+        + len(variables_formulaes)
+    )
+    table_data_rows = proportion.shape[0]
+    for row_index in range(2, table_data_rows + 2):
+        for col_index in range(1, table_data_cols + 1):
+            col_letter = openpyxl.utils.get_column_letter(col_index)
+            cell_coord = f"{col_letter}{row_index}"
+            sheet_calc.formula_attributes[cell_coord] = {
+                "t": "array",
+                "ref": cell_coord,
+            }
+    table_header_col_letter = openpyxl.utils.get_column_letter(
+        len(table_header)
+    )
+    table_row_num = table_data_rows + 1
+    table_columns = []
+    for i in range(1, table_data_cols + 1):
+        if i <= model.proportion.shape[1]:
+            tmp = TableColumn(id=i, name=table_header[i - 1])
+        else:
+            tmp = TableColumn(
+                id=i,
+                name=table_header[i - 1],
+                calculatedColumnFormula=TableFormula(
+                    array=True,
+                    attr_text=table_col_formulaes[
+                        i - model.proportion.shape[1] - 1
+                    ],
+                ),
+            )
+        table_columns.append(tmp)
+
+    tab = Table(
+        displayName="Calculations",
+        ref=f"A1:{table_header_col_letter}{table_row_num}",
+        tableColumns=table_columns,
+    )
+    sheet_calc.add_table(tab)
+
+
+def read_conditions(
+    workbook: openpyxl.Workbook,
+) -> Tuple[str, List[str], int, BoundsType, BoundsType, int]:
+    """
+    Read conditions
+    """
+
+    def get_array(name: str) -> List[List[str]]:
+        return revert_excel_array_attr_text(
+            workbook.defined_names.get(name).attr_text
+        )
+
+    model_name = get_array("model_name")[0][0]
+    component_names = get_array("component_names")[0]
+    n_components = len(component_names)
+    lower_bounds = list(map(Fraction, get_array("lower_bounds")[0]))
+    upper_bounds = list(map(Fraction, get_array("upper_bounds")[0]))
+    n_experiments = int(get_array("n_experiments")[0][0])
+    return (
+        model_name,
+        component_names,
+        n_components,
+        lower_bounds,
+        upper_bounds,
+        n_experiments,
+    )
+
+
+def read_experiments(
+    workbook: openpyxl.Workbook, n_components: int, n_experiments: int
+) -> Tuple[List[str], np.ndarray, np.ndarray]:
+    """
+    Read experiments from workbook.
+    """
+    sheet = workbook["Experiments"]
+    values = np.array(tuple(sheet.values))
+    header = values[0]
+    header_target_names = header[n_components + 1 :]
+    if len(header_target_names) != n_components * n_experiments:
+        print("Your experiment is not complete yet. Will ignore target values.")
+    target_names = list(OrderedDict.fromkeys(header_target_names))
+    target_values = values[1:, n_components + 1 :].T.astype(np.float64)
+    test_points = values[
+        np.where(np.char.startswith(values[:, 0], "TEST-"))[0],
+        1 : n_components + 1,
+    ].astype(np.float64)
+    return target_names, target_values, test_points
